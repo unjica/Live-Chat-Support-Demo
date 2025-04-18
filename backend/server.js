@@ -8,7 +8,7 @@ const server = http.createServer(app);
 
 // Explicitly define allowed origins
 const allowedOrigins = [
-  'https://live-chat-support-demo.vercel.app',
+  process.env.FRONTEND_URL,
   'http://localhost:3000'
 ];
 
