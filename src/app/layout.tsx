@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "@/styles/globals.css";
 import { SocketInitializer } from "@/components/SocketInitializer";
+import ErrorToastWrapper from '@/components/ErrorToastWrapper';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,6 +21,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <SocketInitializer />
         {children}
+        <ErrorToastWrapper />
       </body>
     </html>
   );
