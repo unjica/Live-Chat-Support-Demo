@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChatWindow } from './ChatWindow';
+import { ChatWindow } from '@/components/visitor/ChatWindow';
 import { useChatStore } from '@/store/chatStore';
 
 export function ChatWidget() {

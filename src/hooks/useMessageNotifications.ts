@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Message } from '@/types';
-import { useSound } from './useSound';
+import { useSound } from '@/hooks/useSound';
 
 export function useMessageNotifications(
   messages: Message[],
