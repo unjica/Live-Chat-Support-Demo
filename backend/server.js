@@ -6,12 +6,26 @@ import cors from 'cors';
 const app = express();
 const server = http.createServer(app);
 
+// Health check endpoint
+app.get('/', (req, res) => {
+  res.send('Server is running');
+});
+
 // CORS configuration
+const allowedOrigins = process.env.FRONTEND_URL 
+  ? [process.env.FRONTEND_URL, 'http://localhost:3000']
+  : ['http://localhost:3000'];
+
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL 
-    : [process.env.FRONTEND_URL, 'http://localhost:3000'],
-  methods: ['GET', 'POST'],
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('Origin not allowed:', origin);
+      callback(null, false);
+    }
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']
 };
@@ -21,7 +35,9 @@ app.use(cors(corsOptions));
 
 const io = new Server(server, {
   cors: corsOptions,
-  path: '/socket.io/'
+  path: '/socket.io/',
+  transports: ['polling', 'websocket'],
+  allowEIO3: true
 });
 
 // Store active users and their socket IDs
@@ -80,4 +96,5 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`Socket.IO server running on port ${PORT}`);
+  console.log('CORS allowed origins:', allowedOrigins);
 }); 
