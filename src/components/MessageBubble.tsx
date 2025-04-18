@@ -11,19 +11,21 @@ export function MessageBubble({ message, isOwnMessage, sender }: MessageBubblePr
   return (
     <div className={`flex gap-1 mb-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`relative max-w-[65%] px-2 py-1.5 rounded-lg ${
+        className={`relative flex flex-col gap-1 p-2 rounded-2xl max-w-[70%] ${
           isOwnMessage
-            ? 'bg-[#d9fdd3] dark:bg-green-700 text-[#111b21] dark:text-white rounded-tr-none'
-            : 'bg-white dark:bg-gray-700 text-[#111b21] dark:text-white rounded-tl-none'
+            ? 'ml-auto bg-blue-200 dark:bg-blue-900 rounded-tr-none'
+            : 'bg-white dark:bg-gray-800 rounded-tl-none'
         }`}
       >
         {!isOwnMessage && sender && (
-          <span className="text-xs font-medium text-[#008069] dark:text-green-400 block mb-0.5">
+          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
             {sender.name}
           </span>
         )}
-        <p className="text-[0.9375rem] leading-[1.35rem] break-words">{message.content}</p>
-        <div className="flex items-center justify-end gap-1 -mb-1 mt-1">
+        <div className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">
+          {message.content}
+        </div>
+        <div className="flex items-center justify-end gap-1 text-[0.65rem] text-gray-500 dark:text-gray-400">
           <span className="text-[0.6875rem] text-[#667781] dark:text-gray-400">
             {new Date(message.timestamp).toLocaleTimeString([], { 
               hour: '2-digit',
@@ -32,25 +34,22 @@ export function MessageBubble({ message, isOwnMessage, sender }: MessageBubblePr
             })}
           </span>
           {isOwnMessage && message.status && (
-            <span className="text-[#8696a0] dark:text-gray-400">
-              {message.status === 'read' ? '✓✓' : message.status === 'delivered' ? '✓' : '•'}
+            <span className="flex items-center">
+              {message.status === 'read' ? (
+                <svg className="w-3 h-3 text-blue-500 dark:text-blue-400" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M11.3 4.3L6 9.6l-2.3-2.3-1.4 1.4L6 12.4l6.7-6.7z"/>
+                </svg>
+              ) : message.status === 'delivered' ? (
+                <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M11.3 4.3L6 9.6l-2.3-2.3-1.4 1.4L6 12.4l6.7-6.7z"/>
+                </svg>
+              ) : (
+                <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 1.5A6.5 6.5 0 1 0 14.5 8 6.51 6.51 0 0 0 8 1.5zm0 12A5.5 5.5 0 1 1 13.5 8 5.51 5.51 0 0 1 8 13.5z"/>
+                </svg>
+              )}
             </span>
           )}
-        </div>
-
-        {/* Message tail */}
-        <div
-          className={`absolute top-0 ${
-            isOwnMessage ? '-right-2' : '-left-2'
-          } w-2 h-2 overflow-hidden`}
-        >
-          <div
-            className={`w-3 h-3 transform rotate-45 ${
-              isOwnMessage
-                ? 'bg-[#d9fdd3] dark:bg-green-700 -translate-x-1/2'
-                : 'bg-white dark:bg-gray-700 translate-x-1/2'
-            }`}
-          />
         </div>
       </div>
     </div>
