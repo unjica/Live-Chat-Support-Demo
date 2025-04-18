@@ -19,7 +19,8 @@ export default function VisitorChat() {
   const [isChatFocused, setIsChatFocused] = useState(true);
   const { unreadCount, resetUnreadCount } = useMessageNotifications(
     messages,
-    isChatFocused
+    isChatFocused,
+    user?.id
   );
 
   useEffect(() => {
@@ -58,7 +59,9 @@ export default function VisitorChat() {
       <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-white dark:bg-gray-800">
           <h2 className="text-xl font-semibold text-gray-700 dark:text-white">Live Support Chat</h2>
-          <DarkModeToggle />
+          <div className="flex items-center gap-2">
+            <DarkModeToggle />
+          </div>
         </div>
         
         {user ? (

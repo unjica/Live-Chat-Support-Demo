@@ -1,45 +1,40 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Message } from '@/types';
+import { useSound } from './useSound';
 
 export function useMessageNotifications(
   messages: Message[],
-  isChatFocused: boolean
+  isChatFocused: boolean,
+  userId?: string
 ) {
   const [unreadCount, setUnreadCount] = useState(0);
-  const lastMessageId = useRef<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { playSound, hasInteracted } = useSound();
 
   useEffect(() => {
-    // Initialize audio
-    if (typeof window !== 'undefined') {
-      audioRef.current = new Audio('/notification.mp3');
-    }
-  }, []);
+    if (!userId || messages.length === 0) return;
 
-  useEffect(() => {
-    if (messages.length === 0) return;
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage) return;
 
-    const latestMessage = messages[messages.length - 1];
-    
-    // Skip if this is the first message or if we've already processed this message
-    if (!lastMessageId.current || lastMessageId.current !== latestMessage.id) {
-      lastMessageId.current = latestMessage.id;
-      
-      if (!isChatFocused) {
-        setUnreadCount((prev) => prev + 1);
-        audioRef.current?.play().catch(() => {
-          // Handle autoplay restrictions
-          console.log('Audio playback failed');
-        });
+    const isNewMessage = lastMessage.senderId !== userId;
+    const shouldNotify = isNewMessage && !isChatFocused;
+
+    if (shouldNotify) {
+      setUnreadCount(prev => prev + 1);
+      if (hasInteracted) {
+        playSound();
       }
     }
-  }, [messages, isChatFocused]);
+  }, [messages, isChatFocused, userId, playSound, hasInteracted]);
 
-  const resetUnreadCount = () => {
+  const resetUnreadCount = useCallback(() => {
     setUnreadCount(0);
-  };
+  }, []);
 
-  return { unreadCount, resetUnreadCount };
+  return {
+    unreadCount,
+    resetUnreadCount
+  };
 } 

@@ -1,49 +1,51 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useChatStore } from '@/store/chatStore';
 import { MessageBubble } from '@/components/MessageBubble';
 import { MessageInput } from '@/components/MessageInput';
 import { ChatHeader } from '@/components/ChatHeader';
 import { DarkModeToggle } from '@/components/DarkModeToggle';
 import { useMessageNotifications } from '@/hooks/useMessageNotifications';
+import { UserRole } from '@/types';
 
-export default function AdminDashboard() {
-  const {
-    conversations,
-    selectedVisitorId,
-    setSelectedVisitorId,
-    sendMessage,
-    user,
-    setUser,
-  } = useChatStore();
-
-  const [isChatFocused, setIsChatFocused] = useState(true);
+export default function AdminPage() {
+  const { user, setUser, conversations, sendMessage, isChatFocused, setIsChatFocused } = useChatStore();
+  const [selectedVisitor, setSelectedVisitor] = useState<string | null>(null);
   
+  // Get unique visitor IDs from conversations
+  const visitors = useMemo(() => {
+    return Array.from(new Set(Object.keys(conversations)));
+  }, [conversations]);
+
+  // Get messages for selected visitor
+  const selectedConversation = useMemo(() => {
+    return selectedVisitor ? conversations[selectedVisitor] || [] : [];
+  }, [selectedVisitor, conversations]);
+
+  // Get all messages for notifications
+  const allMessages = useMemo(() => {
+    return Object.values(conversations).flat();
+  }, [conversations]);
+
+  const { unreadCount, resetUnreadCount } = useMessageNotifications(
+    allMessages,
+    isChatFocused,
+    user?.id
+  );
+
   // Initialize admin user
   useEffect(() => {
     if (!user) {
-      setUser({
+      const adminUser = {
         id: 'admin',
-        name: 'Support Agent',
-        role: 'admin',
-        status: 'online',
-      });
+        name: 'Admin',
+        role: 'admin' as UserRole,
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=admin&backgroundColor=b6e3f4`,
+      };
+      setUser(adminUser);
     }
   }, [user, setUser]);
-
-  // Get unique visitor IDs from conversations
-  const visitorIds = Object.keys(conversations);
-  const uniqueVisitorIds = [...new Set(visitorIds)];
-
-  const selectedConversation = selectedVisitorId
-    ? conversations[selectedVisitorId] || []
-    : [];
-
-  const { unreadCount, resetUnreadCount } = useMessageNotifications(
-    selectedConversation,
-    isChatFocused
-  );
 
   useEffect(() => {
     const handleFocus = () => setIsChatFocused(true);
@@ -56,13 +58,13 @@ export default function AdminDashboard() {
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('blur', handleBlur);
     };
-  }, []);
+  }, [setIsChatFocused]);
 
   useEffect(() => {
-    if (selectedVisitorId) {
+    if (selectedVisitor) {
       resetUnreadCount();
     }
-  }, [selectedVisitorId, resetUnreadCount]);
+  }, [selectedVisitor, resetUnreadCount]);
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
@@ -70,20 +72,22 @@ export default function AdminDashboard() {
       <div className="w-1/3 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Active Conversations</h2>
-          <DarkModeToggle />
+          <div className="flex items-center gap-2">
+            <DarkModeToggle />
+          </div>
         </div>
         <div className="overflow-y-auto h-[calc(100vh-4rem)]">
-          {uniqueVisitorIds.map((visitorId) => {
+          {visitors.map((visitorId) => {
             const conversation = conversations[visitorId] || [];
-            const unreadMessages = selectedVisitorId !== visitorId ? conversation.length : 0;
+            const unreadMessages = selectedVisitor !== visitorId ? conversation.length : 0;
 
             return (
               <div
                 key={visitorId}
                 className={`p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                  selectedVisitorId === visitorId ? 'bg-blue-50 dark:bg-blue-900' : ''
+                  selectedVisitor === visitorId ? 'bg-blue-50 dark:bg-blue-900' : ''
                 }`}
-                onClick={() => setSelectedVisitorId(visitorId)}
+                onClick={() => setSelectedVisitor(visitorId)}
               >
                 <div className="flex justify-between items-center">
                   <span className="font-medium text-gray-800 dark:text-white">
@@ -113,10 +117,10 @@ export default function AdminDashboard() {
 
       {/* Main chat area */}
       <div className="flex-1 flex flex-col">
-        {selectedVisitorId ? (
+        {selectedVisitor ? (
           <>
             <ChatHeader
-              title={`Chat with Visitor ${selectedVisitorId}`}
+              title={`Chat with Visitor ${selectedVisitor}`}
               status="online"
             />
             <div className="flex-1 overflow-y-auto p-4">
@@ -133,7 +137,7 @@ export default function AdminDashboard() {
               <MessageInput
                 onSend={(content) =>
                   sendMessage({
-                    conversationId: selectedVisitorId,
+                    conversationId: selectedVisitor,
                     senderId: user?.id || '',
                     content,
                   })

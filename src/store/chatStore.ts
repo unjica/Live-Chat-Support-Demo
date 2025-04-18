@@ -6,17 +6,20 @@ interface ChatState {
   messages: Message[];
   user: User | null;
   conversations: Record<string, Message[]>;
+  isChatFocused: boolean;
   selectedVisitorId: string | null;
   setUser: (user: User) => void;
   sendMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
   receiveMessage: (message: Message) => void;
   setSelectedVisitorId: (visitorId: string | null) => void;
+  setIsChatFocused: (focused: boolean) => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   user: null,
   conversations: {},
+  isChatFocused: true,
   selectedVisitorId: null,
 
   setUser: (user) => {
@@ -53,4 +56,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   setSelectedVisitorId: (visitorId) => set({ selectedVisitorId: visitorId }),
+
+  setIsChatFocused: (focused) => set({ isChatFocused: focused }),
 })); 
