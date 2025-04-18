@@ -2,16 +2,21 @@
   "name": "live-chat-support-demo",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "server": "node server.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.3",
     "next": "15.3.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "zustand": "^5.0.3"
   },

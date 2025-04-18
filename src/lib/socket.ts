@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client';
+import { useChatStore } from '@/store/chatStore';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
 
@@ -22,6 +23,11 @@ export const initializeSocket = () => {
 
     socket.on('disconnect', () => {
       console.log('Socket disconnected');
+    });
+
+    // Listen for incoming messages
+    socket.on('receive_message', (message) => {
+      useChatStore.getState().receiveMessage(message);
     });
   }
   return socket;

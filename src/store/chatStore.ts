@@ -1,38 +1,62 @@
 import { create } from 'zustand';
+import { Message, User } from '@/types';
+import { getSocket } from '@/lib/socket';
 
-export type Message = {
-  id: string;
-  content: string;
-  sender: 'visitor' | 'agent';
-  timestamp: Date;
-};
-
-type ChatState = {
+interface ChatState {
   messages: Message[];
-  isConnected: boolean;
-  isTyping: boolean;
-  addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
-  setIsConnected: (status: boolean) => void;
-  setIsTyping: (status: boolean) => void;
-  clearMessages: () => void;
-};
+  user: User | null;
+  conversations: Record<string, Message[]>;
+  setUser: (user: User) => void;
+  sendMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
+  receiveMessage: (message: Message) => void;
+}
 
-export const useChatStore = create<ChatState>((set) => ({
+export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
-  isConnected: false,
-  isTyping: false,
-  addMessage: (message) =>
+  user: null,
+  conversations: {},
+
+  setUser: (user) => {
+    set({ user });
+    const socket = getSocket();
+    socket.emit('user_join', user);
+  },
+
+  sendMessage: (message) => {
+    const { user } = get();
+    if (!user) return;
+
+    const newMessage: Message = {
+      ...message,
+      id: crypto.randomUUID(),
+      timestamp: Date.now(),
+    };
+
     set((state) => ({
-      messages: [
-        ...state.messages,
-        {
-          ...message,
-          id: crypto.randomUUID(),
-          timestamp: new Date(),
-        },
-      ],
-    })),
-  setIsConnected: (status) => set({ isConnected: status }),
-  setIsTyping: (status) => set({ isTyping: status }),
-  clearMessages: () => set({ messages: [] }),
+      messages: [...state.messages, newMessage],
+      conversations: {
+        ...state.conversations,
+        [message.conversationId]: [
+          ...(state.conversations[message.conversationId] || []),
+          newMessage,
+        ],
+      },
+    }));
+
+    const socket = getSocket();
+    socket.emit('send_message', newMessage);
+  },
+
+  receiveMessage: (message) => {
+    set((state) => ({
+      messages: [...state.messages, message],
+      conversations: {
+        ...state.conversations,
+        [message.conversationId]: [
+          ...(state.conversations[message.conversationId] || []),
+          message,
+        ],
+      },
+    }));
+  },
 })); 
