@@ -8,12 +8,12 @@ let socket: Socket;
 export const initializeSocket = () => {
   if (!socket) {
     socket = io(SOCKET_URL, {
+      path: '/socket.io/',
+      transports: ['websocket'],
+      withCredentials: false,
       reconnectionDelay: 1000,
       reconnection: true,
-      reconnectionAttempts: 10,
-      transports: ['polling', 'websocket'],
-      withCredentials: false,
-      autoConnect: true
+      reconnectionAttempts: 10
     });
 
     socket.on('connect', () => {

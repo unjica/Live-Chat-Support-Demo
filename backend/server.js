@@ -6,26 +6,32 @@ import cors from 'cors';
 const app = express();
 const server = http.createServer(app);
 
-// Health check endpoint
-app.get('/', (req, res) => {
-  res.send('Server is running');
-});
+const allowedOrigins = [
+  'http://localhost:3000',
+  process.env.FRONTEND_URL
+].filter(Boolean);
 
-// Simple CORS configuration
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'OPTIONS'],
-  credentials: false // Must be false when using '*'
-}));
-
-// Socket.IO server with simple CORS
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-    credentials: false
+// CORS configuration
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn('Blocked by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
   },
-  transports: ['polling', 'websocket']
+  methods: ['GET', 'POST'],
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+// Enable CORS for all routes
+app.use(cors(corsOptions));
+
+const io = new Server(server, {
+  cors: corsOptions,
+  path: '/socket.io/'
 });
 
 // Store active users and their socket IDs
@@ -80,8 +86,12 @@ io.on('connection', (socket) => {
   });
 });
 
+app.get('/', (req, res) => {
+  res.send('Socket.IO Server is up and running.');
+});
+
 // Start the server
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
+server.listen(PORT, () => {
+  console.log(`Socket.IO server running on port ${PORT}`);
 }); 
