@@ -41,12 +41,9 @@ const io = new Server(server, {
 const activeUsers = new Map();
 
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
-
   socket.on('user_join', (userData) => {
     activeUsers.set(socket.id, userData);
     io.emit('user_list', Array.from(activeUsers.values()));
-    console.log('User joined:', userData);
   });
 
   socket.on('send_message', (message) => {
@@ -80,7 +77,6 @@ io.on('connection', (socket) => {
     if (user) {
       activeUsers.delete(socket.id);
       io.emit('user_list', Array.from(activeUsers.values()));
-      console.log('User disconnected:', user);
     }
   });
 });

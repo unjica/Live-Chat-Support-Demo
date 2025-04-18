@@ -16,16 +16,8 @@ export const initializeSocket = () => {
       reconnectionAttempts: 10
     });
 
-    socket.on('connect', () => {
-      console.log('Socket connected successfully');
-    });
-
     socket.on('connect_error', (error) => {
       console.error('Socket connection error:', error.message);
-    });
-
-    socket.on('disconnect', (reason) => {
-      console.log('Socket disconnected:', reason);
     });
 
     // Listen for incoming messages
