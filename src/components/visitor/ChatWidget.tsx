@@ -1,52 +1,72 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChatWindow } from '@/components/visitor/ChatWindow';
 import { useChatStore } from '@/store/chatStore';
+import { useMessageNotifications } from '@/hooks/useMessageNotifications';
+import { Avatar } from '@/components/Avatar';
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
-  const { setUser } = useChatStore();
+  const { user, messages } = useChatStore();
+  const { unreadCount, resetUnreadCount } = useMessageNotifications(
+    messages,
+    isOpen,
+    user?.id
+  );
 
-  // Generate a unique conversation ID for this visitor
-  const conversationId = 'visitor-' + crypto.randomUUID();
-
-  // Set up visitor user on component mount
-  useState(() => {
-    setUser({
-      id: 'visitor-' + crypto.randomUUID(),
-      name: 'Visitor',
-      role: 'visitor',
-    });
-  });
+  // Reset unread count when chat is opened
+  useEffect(() => {
+    if (isOpen) {
+      resetUnreadCount();
+    }
+  }, [isOpen, resetUnreadCount]);
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 bg-blue-500 text-white p-4 rounded-full shadow-lg hover:bg-blue-600 transition-colors"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-          />
-        </svg>
-      </button>
-
-      {isOpen && (
+      {/* Chat Window */}
+      {isOpen && user && (
         <ChatWindow
-          conversationId={conversationId}
+          conversationId={user.id}
           onClose={() => setIsOpen(false)}
         />
+      )}
+
+      {/* Floating Button */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className={`fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-110 ${
+          isOpen ? 'scale-0' : 'scale-100'
+        } ${
+          unreadCount > 0
+            ? 'bg-[#25d366] dark:bg-[#00a884]'
+            : 'bg-[#008069] dark:bg-[#00a884]'
+        }`}
+      >
+        {user ? (
+          <div className="relative">
+            <Avatar user={user} size="sm" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-red-500 text-white text-xs font-medium rounded-full">
+                {unreadCount}
+              </span>
+            )}
+          </div>
+        ) : (
+          <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+        )}
+      </button>
+
+      {/* Greeting Message Bubble */}
+      {!isOpen && unreadCount === 0 && (
+        <div className="fixed bottom-24 right-6 z-50 max-w-xs bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 transform transition-all duration-300 ease-in-out animate-fade-in">
+          <p className="text-sm text-gray-800 dark:text-white">
+            👋 Hi there! Need help? We're here for you.
+          </p>
+          <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white dark:bg-gray-800 transform rotate-45" />
+        </div>
       )}
     </>
   );

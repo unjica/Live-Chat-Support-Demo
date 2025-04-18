@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Message } from '@/types';
 import { useSound } from '@/hooks/useSound';
+import { useChatStore } from '@/store/chatStore';
 
 export function useMessageNotifications(
   messages: Message[],
@@ -11,6 +12,7 @@ export function useMessageNotifications(
 ) {
   const [unreadCount, setUnreadCount] = useState(0);
   const { playSound, hasInteracted } = useSound();
+  const { user } = useChatStore();
 
   useEffect(() => {
     if (!userId || messages.length === 0) return;
@@ -19,7 +21,11 @@ export function useMessageNotifications(
     if (!lastMessage) return;
 
     const isNewMessage = lastMessage.senderId !== userId;
-    const shouldNotify = isNewMessage && !isChatFocused;
+    const isVisitor = user?.role === 'visitor';
+    
+    // For visitors: play sound on any admin message
+    // For admin: play sound only when chat is not focused
+    const shouldNotify = isNewMessage && (!isChatFocused || isVisitor);
 
     if (shouldNotify) {
       setUnreadCount(prev => prev + 1);
@@ -27,7 +33,7 @@ export function useMessageNotifications(
         playSound();
       }
     }
-  }, [messages, isChatFocused, userId, playSound, hasInteracted]);
+  }, [messages, isChatFocused, userId, playSound, hasInteracted, user?.role]);
 
   const resetUnreadCount = useCallback(() => {
     setUnreadCount(0);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useChatStore } from '@/store/chatStore';
 import { MessageBubble } from '@/components/MessageBubble';
 import { MessageInput } from '@/components/MessageInput';
@@ -13,6 +13,7 @@ export default function AdminPage() {
   const { user, setUser, conversations, sendMessage, isChatFocused, setIsChatFocused } = useChatStore();
   const [selectedVisitor, setSelectedVisitor] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Get unique visitor IDs from conversations
   const visitors = useMemo(() => {
@@ -66,6 +67,11 @@ export default function AdminPage() {
       resetUnreadCount();
     }
   }, [selectedVisitor, resetUnreadCount]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [selectedConversation]);
 
   const handleSelectVisitor = (visitorId: string) => {
     setSelectedVisitor(visitorId);
@@ -174,7 +180,7 @@ export default function AdminPage() {
               />
             </div>
             {/* Message List */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4 bg-[#efeae2] dark:bg-gray-900">
               {selectedConversation.map((message) => (
                 <MessageBubble
                   key={message.id}
@@ -185,8 +191,9 @@ export default function AdminPage() {
                 />
               ))}
               {selectedConversation.length === 0 && (
-                 <p className="p-4 text-center text-gray-500 dark:text-gray-400">No messages in this conversation yet.</p>
+                <p className="p-4 text-center text-gray-500 dark:text-gray-400">No messages in this conversation yet.</p>
               )}
+              <div ref={messagesEndRef} />
             </div>
             {/* Message Input */}
             <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
@@ -194,7 +201,7 @@ export default function AdminPage() {
                 onSend={(content) =>
                   sendMessage({
                     conversationId: selectedVisitor,
-                    senderId: user?.id || 'admin', // Ensure senderId is set
+                    senderId: user?.id || 'admin',
                     content,
                   })
                 }

@@ -11,7 +11,6 @@ interface ChatWindowProps {
 export function ChatWindow({ conversationId, onClose }: ChatWindowProps) {
   const { messages, user } = useChatStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
 
   const conversationMessages = messages.filter(
     (msg) => msg.conversationId === conversationId
@@ -38,14 +37,6 @@ export function ChatWindow({ conversationId, onClose }: ChatWindowProps) {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="p-2 rounded-full hover:bg-[#ffffff1a] text-white sm:hidden"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isExpanded ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
-            </svg>
-          </button>
-          <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-[#ffffff1a] text-white"
           >
@@ -58,16 +49,14 @@ export function ChatWindow({ conversationId, onClose }: ChatWindowProps) {
 
       {/* Chat area - hidden on mobile when collapsed */}
       <div 
-        className={`flex-1 overflow-y-auto p-4 bg-[#efeae2] dark:bg-gray-900 transition-all duration-300 ease-in-out ${
-          isExpanded ? 'max-h-[calc(100vh-12rem)]' : 'max-h-0 sm:max-h-none'
-        }`}
+        className="flex-1 overflow-y-auto p-4 bg-[#efeae2] dark:bg-gray-900 transition-all duration-300 ease-in-out max-h-[calc(100vh-12rem)]"
         style={{
           backgroundImage: `url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAApgAAAKYB3X3/OAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAACYSURBVEiJ7ZbBCcAgDEUfLuBSLuUOTmK7U6ZwCWdwB5fqDm7gEg5gL0EqNjUVPHjwQwIx8EiMEaEm6lL0nXN3k3DhjzbwAtjjKTvAK2n96yMAGIwxoxCiAzDHGHvvfQcgCSFmZh6UUuv3VgBSyrUEwMx9zpmUUivGRkoppZSOPnEKMN5QwnH4Z5BaYPMtPL0zS/Rq/wY2C/Qy2N4lHh4AAAAASUVORK5CYII=")`,
           backgroundRepeat: 'repeat',
           opacity: 0.4
         }}
       >
-        {conversationMessages.map((message) => (
+        {conversationMessages.map((message, index) => (
           <MessageBubble
             key={message.id}
             message={message}
@@ -80,9 +69,7 @@ export function ChatWindow({ conversationId, onClose }: ChatWindowProps) {
 
       {/* Input area - hidden on mobile when collapsed */}
       <div 
-        className={`bg-[#f0f2f5] dark:bg-gray-800 p-3 transition-all duration-300 ease-in-out ${
-          isExpanded ? 'max-h-20' : 'max-h-0 sm:max-h-20'
-        }`}
+        className="bg-[#f0f2f5] dark:bg-gray-800 p-3 transition-all duration-300 ease-in-out max-h-20"
       >
         <MessageInput conversationId={conversationId} />
       </div>
