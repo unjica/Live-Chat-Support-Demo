@@ -1,46 +1,54 @@
 import express from 'express';
 import http from 'http';
-import { Server } from 'socket.io';
 import cors from 'cors';
+import { Server } from 'socket.io';
 
 const app = express();
 const server = http.createServer(app);
 
+// Explicitly define allowed origins
 const allowedOrigins = [
-  'http://localhost:3000',
-  process.env.FRONTEND_URL
-].filter(Boolean);
+  'https://live-chat-support-demo.vercel.app',
+  'http://localhost:3000'
+];
 
-// CORS configuration
+// Express CORS middleware
 const corsOptions = {
   origin: allowedOrigins,
   methods: ['GET', 'POST', 'OPTIONS'],
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization']
+  credentials: true
 };
 
-// Enable CORS for all routes
-app.use('*', cors(corsOptions));
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // enable preflight for all routes
 
-const io = new Server(server, {
-  cors: corsOptions,
-  path: '/socket.io/'
+// Health check
+app.get('/', (req, res) => {
+  res.send('Socket.IO Server is up and running.');
 });
 
-// Store active users and their socket IDs
+// Socket.IO with CORS config
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  path: '/socket.io/',
+  transports: ['polling', 'websocket']
+});
+
 const activeUsers = new Map();
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  // Handle user joining
   socket.on('user_join', (userData) => {
     activeUsers.set(socket.id, userData);
     io.emit('user_list', Array.from(activeUsers.values()));
     console.log('User joined:', userData);
   });
 
-  // Handle chat messages
   socket.on('send_message', (message) => {
     const user = activeUsers.get(socket.id);
     if (user) {
@@ -53,7 +61,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Handle typing indicators
   socket.on('typing_start', () => {
     const user = activeUsers.get(socket.id);
     if (user) {
@@ -68,7 +75,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Handle disconnection
   socket.on('disconnect', () => {
     const user = activeUsers.get(socket.id);
     if (user) {
@@ -79,12 +85,8 @@ io.on('connection', (socket) => {
   });
 });
 
-app.get('/', (req, res) => {
-  res.send('Socket.IO Server is up and running.');
-});
-
-// Start the server
+// Listen on Railway's dynamic port
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
-  console.log(`Socket.IO server running on port ${PORT}`);
-}); 
+  console.log(`✅ Socket.IO server running on port ${PORT}`);
+});
