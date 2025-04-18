@@ -9,7 +9,7 @@ export const initializeSocket = () => {
   if (!socket) {
     socket = io(SOCKET_URL, {
       path: '/socket.io/',
-      transports: ['websocket'],
+      transports: ['polling', 'websocket'],
       withCredentials: false,
       reconnectionDelay: 1000,
       reconnection: true,
