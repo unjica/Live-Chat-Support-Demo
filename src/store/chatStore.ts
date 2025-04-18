@@ -43,16 +43,29 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   receiveMessage: (message) => {
-    set((state) => ({
-      messages: [...state.messages, message],
-      conversations: {
-        ...state.conversations,
-        [message.conversationId]: [
-          ...(state.conversations[message.conversationId] || []),
-          message,
-        ],
-      },
-    }));
+    const { user } = get();
+    if (!user) return;
+
+    // For visitors: only show messages in their conversation
+    if (user.role === 'visitor') {
+      if (message.conversationId === user.id) {
+        set((state) => ({
+          messages: [...state.messages, message]
+        }));
+      }
+    } 
+    // For admin: organize messages into conversations
+    else {
+      set((state) => ({
+        conversations: {
+          ...state.conversations,
+          [message.conversationId]: [
+            ...(state.conversations[message.conversationId] || []),
+            message,
+          ],
+        },
+      }));
+    }
   },
 
   setSelectedVisitorId: (visitorId) => set({ selectedVisitorId: visitorId }),
