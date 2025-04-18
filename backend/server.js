@@ -13,21 +13,14 @@ const allowedOrigins = [
 
 // CORS configuration
 const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.warn('Blocked by CORS:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST'],
+  origin: allowedOrigins,
+  methods: ['GET', 'POST', 'OPTIONS'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 // Enable CORS for all routes
-app.use(cors(corsOptions));
+app.use('*', cors(corsOptions));
 
 const io = new Server(server, {
   cors: corsOptions,
