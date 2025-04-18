@@ -3,30 +3,26 @@
 import { useEffect } from 'react';
 import { getSocket } from '@/lib/socket';
 import { useError } from '@/hooks/useError';
-import MessageInput from './MessageInput';
-import { create } from 'zustand';
-
-interface Message {
-  text: string;
-  isUser: boolean;
-}
-
-interface ChatState {
-  messages: Message[];
-  addMessage: (message: Message) => void;
-}
-
-export const useChatStore = create<ChatState>((set) => ({
-  messages: [],
-  addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
-}));
+import { MessageInput } from '@/components/MessageInput';
+import { useChatStore } from '@/store/chatStore';
+import { Message } from '@/types';
 
 export default function Chat() {
-  const messages = useChatStore((state: ChatState) => state.messages);
+  const messages = useChatStore((state) => state.messages);
+  const setUser = useChatStore((state) => state.setUser);
+  const user = useChatStore((state) => state.user);
   const { showError } = useError();
 
   useEffect(() => {
     try {
+      // Initialize user
+      const visitorId = `visitor_${Math.random().toString(36).substr(2, 9)}`;
+      setUser({
+        id: visitorId,
+        role: 'visitor',
+        name: `Visitor ${visitorId}`,
+      });
+
       const socket = getSocket();
       if (!socket.connected) {
         socket.connect();
@@ -43,21 +39,21 @@ export default function Chat() {
         console.error('Error disconnecting socket:', error);
       }
     };
-  }, [showError]);
+  }, [showError, setUser]);
 
   return (
     <div className="flex flex-col h-screen">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message: Message, index: number) => (
+        {messages.map((message: Message) => (
           <div
-            key={index}
+            key={message.id}
             className={`p-3 rounded-lg max-w-[70%] ${
-              message.isUser
+              message.senderId === user?.id
                 ? 'bg-blue-500 text-white ml-auto'
                 : 'bg-gray-200 text-gray-800'
             }`}
           >
-            {message.text}
+            {message.content}
           </div>
         ))}
       </div>

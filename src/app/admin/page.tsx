@@ -233,7 +233,7 @@ export default function AdminPage() {
             {/* Message Input */}
             <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
               <MessageInput
-                onSend={(content) =>
+                onSend={(content: string) =>
                   sendMessage({
                     conversationId: selectedVisitor,
                     senderId: user?.id || 'admin',

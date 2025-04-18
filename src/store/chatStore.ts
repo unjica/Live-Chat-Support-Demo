@@ -28,34 +28,25 @@ export const useChatStore = create<ChatState>((set, get) => ({
     socket.emit('user_join', user);
   },
 
-  sendMessage: (message) => {
+  sendMessage: (messageData) => {
     const { user } = get();
     if (!user) return;
 
-    const newMessage: Message = {
-      ...message,
+    const message = {
       id: crypto.randomUUID(),
+      ...messageData,
       timestamp: Date.now(),
     };
 
     const socket = getSocket();
-    socket.emit('send_message', newMessage);
+    socket.emit('send_message', message);
   },
 
   receiveMessage: (message) => {
     const { user } = get();
     if (!user) return;
 
-    // For visitors: only show messages in their conversation
-    if (user.role === 'visitor') {
-      if (message.conversationId === user.id) {
-        set((state) => ({
-          messages: [...state.messages, message]
-        }));
-      }
-    } 
-    // For admin: organize messages into conversations
-    else {
+    if (user.role === 'admin') {
       set((state) => ({
         conversations: {
           ...state.conversations,
@@ -64,6 +55,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
             message,
           ],
         },
+      }));
+    } else if (message.conversationId === user.id) {
+      set((state) => ({
+        messages: [...state.messages, message]
       }));
     }
   },
