@@ -1,157 +1,109 @@
-# MiniCom - Real-time Live Chat Demo
+# Live Chat Support Demo
 
-A modern, lightweight customer support chat prototype inspired by Intercom. Built with Next.js, Socket.IO, and Tailwind CSS.
+A real-time chat support application built with Next.js, Socket.IO, and TypeScript. This application demonstrates a WhatsApp-style chat interface with support for both visitor and admin interactions.
 
-![MiniCom Demo](https://placehold.co/1200x600?text=MiniCom+Demo)
+## Features
 
-## 🚀 Features
+- 💬 Real-time messaging using Socket.IO
+- 👥 Separate interfaces for visitors and admin
+- 📱 Responsive design with WhatsApp-inspired UI
+- 🔄 Real-time message status updates
+- 🎨 Modern UI with Tailwind CSS
+- 🌙 Dark mode support
+- 📊 Admin dashboard for managing multiple conversations
 
-- **Real-time Chat**
-  - Instant message delivery
-  - Message notifications
-  - Sound alerts
-  - Focus/blur detection
+## Tech Stack
 
-- **Agent Dashboard**
-  - Active conversation list
-  - Visitor management
-  - Message history
-  - Real-time updates
-
-- **Chat Widget**
-  - Clean, modern design
-  - Dark mode support
-  - Responsive layout
-  - User avatars (DiceBear)
-
-- **User Experience**
-  - Sound notifications
-  - Unread message count
-  - Smooth animations
-  - Real-time message delivery
-
-## 🛠️ Tech Stack
-
-- **Frontend**
-  - Next.js 14 (App Router)
-  - React 18
+- **Frontend:**
+  - Next.js 15.3
+  - React 19
+  - TypeScript
   - Tailwind CSS
+  - Socket.IO Client
   - Zustand (State Management)
 
-- **Backend**
-  - Socket.IO (Real-time communication)
+- **Backend:**
+  - Express
+  - Socket.IO Server
   - Node.js
 
-## 🌐 Live Demo
+## Getting Started
 
-[Demo URL] (Coming soon)
+### Prerequisites
 
-## 🤖 AI-Assisted Development
+- Node.js (Latest LTS version recommended)
+- npm or yarn
 
-This project was developed with the help of AI tools:
+### Installation
 
-- **ChatGPT / Cursor**
-  - Zustand store architecture design
-  - Socket.IO integration patterns
-  - UI component development with Tailwind
-  - Debugging and configuration validation
-  - Code optimization and best practices
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/live-chat-support-demo.git
+cd live-chat-support-demo
+```
 
-## 🏗️ Architecture & Decisions
+2. Install dependencies:
+```bash
+npm install
+```
 
-### State Management
-- **Why Zustand?**
-  - Simpler API than Context + Reducer
-  - Better performance with less boilerplate
-  - Built-in middleware support
-  - Excellent TypeScript integration
+3. Start the development server:
+```bash
+# In one terminal, start the Socket.IO server
+npm run server
 
-### Project Structure
+# In another terminal, start the Next.js development server
+npm run dev
+```
+
+4. Open your browser and visit:
+   - Visitor Chat: http://localhost:3000/visitor
+   - Admin Dashboard: http://localhost:3000/admin
+
+## Project Structure
+
 ```
 src/
-├── app/              # Next.js app router pages
-│   ├── shared/      # Shared components
-│   └── visitor/     # Visitor-specific components
-├── components/       # Reusable UI components
-├── hooks/           # Custom React hooks
-├── lib/             # Utility functions
-├── store/           # Zustand store
-├── styles/          # Global styles
-└── types/           # TypeScript types
+├── app/                    # Next.js app directory
+│   ├── admin/             # Admin dashboard pages
+│   └── visitor/           # Visitor chat pages
+├── components/            # React components
+│   ├── shared/           # Shared components
+│   └── visitor/          # Visitor-specific components
+├── lib/                   # Utility functions and configurations
+├── store/                # State management (Zustand)
+├── types/                # TypeScript type definitions
+└── styles/               # Global styles and Tailwind CSS
 ```
 
-### Key Components
-- `SocketInitializer`: Manages Socket.IO connections
-- `MessageBubble`: Renders chat messages
-- `MessageInput`: Handles message input
-- `ChatHeader`: Displays chat header
-- `DarkModeToggle`: Manages theme switching
-- `Avatar`: Displays user avatars
+## Features in Detail
 
-### Data Storage
-- In-memory state management
-- Real-time synchronization via Socket.IO
-- Chat history maintained in Zustand store
+### Visitor Interface
+- WhatsApp-style chat interface
+- Real-time message delivery
+- Message status indicators
+- Responsive design for mobile devices
 
-## 📈 Areas for Improvement
+### Admin Dashboard
+- Multiple conversation management
+- Real-time updates for new messages
+- Conversation switching
+- Message history preservation
 
-- **Core Features**
-  - Typing indicators
-  - Read receipts
-  - Message search
-  - Conversation archiving
+## Development
 
-- **Authentication**
-  - User authentication
-  - Role-based access
-  - Session management
+### Available Scripts
 
-- **Agent Features**
-  - Agent presence/status
-  - Availability management
-  - Conversation assignment
-  - Performance metrics
+- `npm run dev` - Start Next.js development server
+- `npm run server` - Start Socket.IO server
+- `npm run build` - Build the production application
+- `npm run start` - Start the production server
+- `npm run lint` - Run ESLint for code quality
 
-- **Additional Features**
-  - File sharing
-  - Rich text formatting
-  - Chat transcripts
-  - Analytics dashboard
+### Environment Variables
 
-## 🚀 Getting Started
+Create a `.env.local` file in the root directory:
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/minicom.git
-   cd minicom
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Start the development server**
-   ```bash
-   npm run dev
-   ```
-
-4. **Start the Socket.IO server**
-   ```bash
-   node server.js
-   ```
-
-5. **Open in browser**
-   - Admin: http://localhost:3000/admin
-   - Visitor: http://localhost:3000/visitor
-
-## 📝 Notes
-
-- No environment variables needed
-- Fully local development setup
-- Built-in TypeScript support
-- Hot reloading enabled
-
-## 📄 License
-
-MIT License - Feel free to use this project as a starting point for your own live chat implementation.
+```env
+NEXT_PUBLIC_SOCKET_URL=http://localhost:3001
+```
