@@ -10,7 +10,7 @@ import { useMessageNotifications } from '@/hooks/useMessageNotifications';
 import { UserRole } from '@/types';
 
 export default function AdminPage() {
-  const { user, setUser, conversations, sendMessage, isChatFocused, setIsChatFocused } = useChatStore();
+  const { user, setUser, conversations, sendMessage, isChatFocused, setIsChatFocused, onlineVisitors } = useChatStore();
   const [selectedVisitor, setSelectedVisitor] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -89,27 +89,7 @@ export default function AdminPage() {
         <div className="p-4 border-b border-gray-200/80 dark:border-gray-700/80 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Conversations</h2>
-            <div className="flex items-center gap-2">
-              <DarkModeToggle />
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 md:hidden rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div className="mt-4 relative">
-            <input
-              type="text"
-              placeholder="Search conversations..."
-              className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-            />
-            <svg className="w-5 h-5 absolute right-3 top-2.5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+            <DarkModeToggle />
           </div>
         </div>
         <div className="overflow-y-auto h-[calc(100vh-8rem)]">
@@ -120,6 +100,7 @@ export default function AdminPage() {
               selectedVisitor !== visitorId && 
               lastMessage && 
               lastMessage.senderId !== user?.id;
+            const isOnline = onlineVisitors.has(visitorId);
 
             return (
               <div
@@ -133,17 +114,27 @@ export default function AdminPage() {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 overflow-hidden rounded-full">
-                      <img
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${visitorId}&backgroundColor=b6e3f4`}
-                        alt={`Visitor ${visitorId.substring(0, 8)}`}
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="relative">
+                      <div className="w-10 h-10 overflow-hidden rounded-full">
+                        <img
+                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${visitorId}&backgroundColor=b6e3f4`}
+                          alt={`Visitor ${visitorId.substring(0, 8)}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      {isOnline && (
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-800" />
+                      )}
                     </div>
                     <div>
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        Visitor {visitorId.substring(0, 8)}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          Visitor {visitorId.substring(0, 8)}
+                        </span>
+                        <span className={`text-xs ${isOnline ? 'text-green-500' : 'text-gray-400'}`}>
+                          {isOnline ? 'online' : 'offline'}
+                        </span>
+                      </div>
                       {lastMessage && (
                         <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-0.5">
                           {lastMessage.content}
@@ -163,53 +154,19 @@ export default function AdminPage() {
               </div>
             );
           })}
-          {visitors.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8">
-              <svg className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-              <p className="text-gray-500 dark:text-gray-400">No active conversations</p>
-              <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Waiting for visitors to start chatting</p>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Overlay for mobile sidebar */}
-      {isSidebarOpen && (
-        <div
-          onClick={() => setIsSidebarOpen(false)}
-          className="fixed inset-0 z-10 bg-black/30 backdrop-blur-sm md:hidden"
-        />
-      )}
-
       {/* Main chat area */}
       <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
-        {/* Mobile header */}
-        <div className="p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2 md:hidden">
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
-            </svg>
-          </button>
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-white truncate">
-            {selectedVisitor ? `Chat with Visitor ${selectedVisitor.substring(0, 8)}` : 'Admin Chat'}
-          </h2>
-        </div>
-
         {selectedVisitor ? (
           <>
-            {/* Desktop Chat Header */}
             <div className="hidden md:block border-b border-gray-200 dark:border-gray-700">
               <ChatHeader
                 title={`Chat with Visitor ${selectedVisitor.substring(0, 8)}`}
-                status="online"
+                status={onlineVisitors.has(selectedVisitor) ? 'online' : 'offline'}
               />
             </div>
-            {/* Message List */}
             <div className="flex-1 overflow-y-auto p-4 bg-[#efeae2] dark:bg-gray-900">
               {selectedConversation.map((message) => (
                 <MessageBubble
@@ -219,18 +176,8 @@ export default function AdminPage() {
                   sender={message.senderId !== user?.id ? { id: message.senderId, name: `Visitor ${message.senderId.substring(0,8)}`, role: 'visitor' } : undefined}
                 />
               ))}
-              {selectedConversation.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                  <svg className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                  <p className="text-gray-500 dark:text-gray-400">No messages yet</p>
-                  <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Start the conversation!</p>
-                </div>
-              )}
               <div ref={messagesEndRef} />
             </div>
-            {/* Message Input */}
             <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
               <MessageInput
                 onSend={(content: string) =>

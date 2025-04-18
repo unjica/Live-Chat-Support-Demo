@@ -43,7 +43,17 @@ const activeUsers = new Map();
 io.on('connection', (socket) => {
   socket.on('user_join', (userData) => {
     activeUsers.set(socket.id, userData);
-    io.emit('user_list', Array.from(activeUsers.values()));
+    // Broadcast to admin that this visitor is online
+    if (userData.role === 'visitor') {
+      io.emit('visitor_online', userData.id);
+    }
+    // Send current online visitors to admin
+    if (userData.role === 'admin') {
+      const onlineVisitors = Array.from(activeUsers.values())
+        .filter(user => user.role === 'visitor')
+        .map(user => user.id);
+      socket.emit('visitors_online', onlineVisitors);
+    }
   });
 
   socket.on('send_message', (message) => {
@@ -75,8 +85,11 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     const user = activeUsers.get(socket.id);
     if (user) {
+      // Broadcast to admin that this visitor is offline
+      if (user.role === 'visitor') {
+        io.emit('visitor_offline', user.id);
+      }
       activeUsers.delete(socket.id);
-      io.emit('user_list', Array.from(activeUsers.values()));
     }
   });
 });
