@@ -35,17 +35,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
       timestamp: Date.now(),
     };
 
-    set((state) => ({
-      messages: [...state.messages, newMessage],
-      conversations: {
-        ...state.conversations,
-        [message.conversationId]: [
-          ...(state.conversations[message.conversationId] || []),
-          newMessage,
-        ],
-      },
-    }));
-
     const socket = getSocket();
     socket.emit('send_message', newMessage);
   },

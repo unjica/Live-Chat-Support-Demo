@@ -15,18 +15,29 @@ export default function AdminDashboard() {
     setSelectedVisitorId,
     sendMessage,
     user,
+    setUser,
   } = useChatStore();
 
   const [isChatFocused, setIsChatFocused] = useState(true);
   
+  // Initialize admin user
+  useEffect(() => {
+    if (!user) {
+      setUser({
+        id: 'admin',
+        name: 'Support Agent',
+        role: 'admin',
+        status: 'online',
+      });
+    }
+  }, [user, setUser]);
+
   // Get unique visitor IDs from conversations
-  const visitorIds = Object.keys(conversations).map(
-    (convId) => convId.split('_')[0]
-  );
+  const visitorIds = Object.keys(conversations);
   const uniqueVisitorIds = [...new Set(visitorIds)];
 
   const selectedConversation = selectedVisitorId
-    ? conversations[`${selectedVisitorId}_${user?.id}`] || []
+    ? conversations[selectedVisitorId] || []
     : [];
 
   const { unreadCount, resetUnreadCount } = useMessageNotifications(
@@ -63,7 +74,7 @@ export default function AdminDashboard() {
         </div>
         <div className="overflow-y-auto h-[calc(100vh-4rem)]">
           {uniqueVisitorIds.map((visitorId) => {
-            const conversation = conversations[`${visitorId}_${user?.id}`] || [];
+            const conversation = conversations[visitorId] || [];
             const unreadMessages = selectedVisitorId !== visitorId ? conversation.length : 0;
 
             return (
@@ -75,7 +86,9 @@ export default function AdminDashboard() {
                 onClick={() => setSelectedVisitorId(visitorId)}
               >
                 <div className="flex justify-between items-center">
-                  <span className="font-medium dark:text-white">Visitor {visitorId}</span>
+                  <span className="font-medium text-gray-800 dark:text-white">
+                    Visitor {visitorId.slice(0, 4)}
+                  </span>
                   <div className="flex items-center gap-2">
                     {unreadMessages > 0 && (
                       <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1">
@@ -120,7 +133,7 @@ export default function AdminDashboard() {
               <MessageInput
                 onSend={(content) =>
                   sendMessage({
-                    conversationId: `${selectedVisitorId}_${user?.id}`,
+                    conversationId: selectedVisitorId,
                     senderId: user?.id || '',
                     content,
                   })
