@@ -17,6 +17,7 @@ export default function VisitorPage() {
         name: `Visitor ${visitorId.slice(0, 4)}`,
         role: 'visitor',
         status: 'online',
+        avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${visitorId}&backgroundColor=b6e3f4`,
       });
     }
   }, [user, setUser]);
