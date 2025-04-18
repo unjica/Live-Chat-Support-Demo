@@ -12,8 +12,7 @@ export const initializeSocket = () => {
       reconnection: true,
       reconnectionAttempts: 10,
       transports: ['polling', 'websocket'],
-      path: '/socket.io/',
-      withCredentials: true,
+      withCredentials: false,
       autoConnect: true
     });
 
