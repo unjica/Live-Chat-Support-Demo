@@ -11,14 +11,17 @@ export const initializeSocket = () => {
       reconnectionDelay: 1000,
       reconnection: true,
       reconnectionAttempts: 10,
-      transports: ['websocket'],
-      agent: false,
-      upgrade: false,
+      transports: ['websocket', 'polling'],
+      secure: true,
       rejectUnauthorized: false
     });
 
     socket.on('connect', () => {
       console.log('Socket connected');
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
     });
 
     socket.on('disconnect', () => {
