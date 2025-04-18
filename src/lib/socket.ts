@@ -11,9 +11,10 @@ export const initializeSocket = () => {
       reconnectionDelay: 1000,
       reconnection: true,
       reconnectionAttempts: 10,
-      transports: ['websocket', 'polling'],
-      secure: true,
-      rejectUnauthorized: false
+      transports: ['polling', 'websocket'],
+      forceNew: true,
+      path: '/socket.io/',
+      withCredentials: true
     });
 
     socket.on('connect', () => {
@@ -24,8 +25,8 @@ export const initializeSocket = () => {
       console.error('Socket connection error:', error);
     });
 
-    socket.on('disconnect', () => {
-      console.log('Socket disconnected');
+    socket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
     });
 
     // Listen for incoming messages
