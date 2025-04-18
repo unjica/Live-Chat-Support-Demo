@@ -1,9 +1,12 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useChatStore } from '@/store/chatStore';
 import { MessageBubble } from '@/components/MessageBubble';
 import { MessageInput } from '@/components/MessageInput';
 import { ChatHeader } from '@/components/ChatHeader';
+import { DarkModeToggle } from '@/components/DarkModeToggle';
+import { useMessageNotifications } from '@/hooks/useMessageNotifications';
 
 export default function AdminDashboard() {
   const {
@@ -14,9 +17,11 @@ export default function AdminDashboard() {
     user,
   } = useChatStore();
 
+  const [isChatFocused, setIsChatFocused] = useState(true);
+  
   // Get unique visitor IDs from conversations
   const visitorIds = Object.keys(conversations).map(
-    (convId) => convId.split('_')[0] // Assuming conversationId format is "visitorId_agentId"
+    (convId) => convId.split('_')[0]
   );
   const uniqueVisitorIds = [...new Set(visitorIds)];
 
@@ -24,37 +29,72 @@ export default function AdminDashboard() {
     ? conversations[`${selectedVisitorId}_${user?.id}`] || []
     : [];
 
+  const { unreadCount, resetUnreadCount } = useMessageNotifications(
+    selectedConversation,
+    isChatFocused
+  );
+
+  useEffect(() => {
+    const handleFocus = () => setIsChatFocused(true);
+    const handleBlur = () => setIsChatFocused(false);
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (selectedVisitorId) {
+      resetUnreadCount();
+    }
+  }, [selectedVisitorId, resetUnreadCount]);
+
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
       {/* Sidebar with conversation list */}
-      <div className="w-1/3 border-r border-gray-200 bg-white">
-        <div className="p-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold">Active Conversations</h2>
+      <div className="w-1/3 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Active Conversations</h2>
+          <DarkModeToggle />
         </div>
         <div className="overflow-y-auto h-[calc(100vh-4rem)]">
-          {uniqueVisitorIds.map((visitorId) => (
-            <div
-              key={visitorId}
-              className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
-                selectedVisitorId === visitorId ? 'bg-blue-50' : ''
-              }`}
-              onClick={() => setSelectedVisitorId(visitorId)}
-            >
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Visitor {visitorId}</span>
-                <span className="text-sm text-gray-500">
-                  {conversations[`${visitorId}_${user?.id}`]?.length || 0} messages
-                </span>
+          {uniqueVisitorIds.map((visitorId) => {
+            const conversation = conversations[`${visitorId}_${user?.id}`] || [];
+            const unreadMessages = selectedVisitorId !== visitorId ? conversation.length : 0;
+
+            return (
+              <div
+                key={visitorId}
+                className={`p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                  selectedVisitorId === visitorId ? 'bg-blue-50 dark:bg-blue-900' : ''
+                }`}
+                onClick={() => setSelectedVisitorId(visitorId)}
+              >
+                <div className="flex justify-between items-center">
+                  <span className="font-medium dark:text-white">Visitor {visitorId}</span>
+                  <div className="flex items-center gap-2">
+                    {unreadMessages > 0 && (
+                      <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1">
+                        {unreadMessages}
+                      </span>
+                    )}
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {conversation.length} messages
+                    </span>
+                  </div>
+                </div>
+                {conversation.length > 0 && (
+                  <p className="text-sm text-gray-600 dark:text-gray-300 truncate mt-1">
+                    {conversation[conversation.length - 1].content}
+                  </p>
+                )}
               </div>
-              {conversations[`${visitorId}_${user?.id}`]?.length > 0 && (
-                <p className="text-sm text-gray-600 truncate mt-1">
-                  {conversations[`${visitorId}_${user?.id}`][
-                    conversations[`${visitorId}_${user?.id}`].length - 1
-                  ].content}
-                </p>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -72,10 +112,11 @@ export default function AdminDashboard() {
                   key={message.id}
                   message={message}
                   isOwnMessage={message.senderId === user?.id}
+                  sender={message.senderId === user?.id ? user : undefined}
                 />
               ))}
             </div>
-            <div className="p-4 border-t border-gray-200">
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
               <MessageInput
                 onSend={(content) =>
                   sendMessage({
@@ -89,7 +130,9 @@ export default function AdminDashboard() {
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-gray-500">Select a conversation to start chatting</p>
+            <p className="text-gray-500 dark:text-gray-400">
+              Select a conversation to start chatting
+            </p>
           </div>
         )}
       </div>
