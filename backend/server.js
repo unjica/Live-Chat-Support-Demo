@@ -12,17 +12,25 @@ app.get('/', (req, res) => {
 });
 
 // CORS configuration
-const allowedOrigins = process.env.FRONTEND_URL 
-  ? [process.env.FRONTEND_URL, 'http://localhost:3000']
-  : ['http://localhost:3000'];
+const allowedOrigins = [
+  'https://live-chat-support-demo.vercel.app',  // no trailing slash
+  'http://localhost:3000'
+];
+
+console.log('Configuring CORS with allowed origins:', allowedOrigins);
 
 const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      console.log('Origin not allowed:', origin);
-      callback(null, false);
+      console.log('Rejected Origin:', origin);
+      callback(new Error('Not allowed by CORS'));
     }
   },
   methods: ['GET', 'POST', 'OPTIONS'],
@@ -34,10 +42,13 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 const io = new Server(server, {
-  cors: corsOptions,
-  path: '/socket.io/',
+  cors: {
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
   transports: ['polling', 'websocket'],
-  allowEIO3: true
+  path: '/socket.io/'
 });
 
 // Store active users and their socket IDs
@@ -94,7 +105,11 @@ io.on('connection', (socket) => {
 
 // Start the server
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  console.log(`Socket.IO server running on port ${PORT}`);
-  console.log('CORS allowed origins:', allowedOrigins);
+server.listen(PORT, '0.0.0.0', () => {  // Listen on all network interfaces
+  console.log(`Server running on port ${PORT}`);
+  console.log('CORS configuration:', {
+    allowedOrigins,
+    methods: corsOptions.methods,
+    credentials: corsOptions.credentials
+  });
 }); 

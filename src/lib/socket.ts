@@ -12,17 +12,17 @@ export const initializeSocket = () => {
       reconnection: true,
       reconnectionAttempts: 10,
       transports: ['polling', 'websocket'],
-      forceNew: true,
       path: '/socket.io/',
-      withCredentials: true
+      withCredentials: true,
+      autoConnect: true
     });
 
     socket.on('connect', () => {
-      console.log('Socket connected');
+      console.log('Socket connected successfully');
     });
 
     socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
+      console.error('Socket connection error:', error.message);
     });
 
     socket.on('disconnect', (reason) => {
