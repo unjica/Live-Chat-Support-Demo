@@ -1,36 +1,157 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MiniCom - Real-time Live Chat Demo
 
-## Getting Started
+A modern, lightweight customer support chat prototype inspired by Intercom. Built with Next.js, Socket.IO, and Tailwind CSS.
 
-First, run the development server:
+![MiniCom Demo](https://placehold.co/1200x600?text=MiniCom+Demo)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🚀 Features
+
+- **Real-time Chat**
+  - Instant message delivery
+  - Message notifications
+  - Sound alerts
+  - Focus/blur detection
+
+- **Agent Dashboard**
+  - Active conversation list
+  - Visitor management
+  - Message history
+  - Real-time updates
+
+- **Chat Widget**
+  - Clean, modern design
+  - Dark mode support
+  - Responsive layout
+  - User avatars (DiceBear)
+
+- **User Experience**
+  - Sound notifications
+  - Unread message count
+  - Smooth animations
+  - Real-time message delivery
+
+## 🛠️ Tech Stack
+
+- **Frontend**
+  - Next.js 14 (App Router)
+  - React 18
+  - Tailwind CSS
+  - Zustand (State Management)
+
+- **Backend**
+  - Socket.IO (Real-time communication)
+  - Node.js
+
+## 🌐 Live Demo
+
+[Demo URL] (Coming soon)
+
+## 🤖 AI-Assisted Development
+
+This project was developed with the help of AI tools:
+
+- **ChatGPT / Cursor**
+  - Zustand store architecture design
+  - Socket.IO integration patterns
+  - UI component development with Tailwind
+  - Debugging and configuration validation
+  - Code optimization and best practices
+
+## 🏗️ Architecture & Decisions
+
+### State Management
+- **Why Zustand?**
+  - Simpler API than Context + Reducer
+  - Better performance with less boilerplate
+  - Built-in middleware support
+  - Excellent TypeScript integration
+
+### Project Structure
+```
+src/
+├── app/              # Next.js app router pages
+│   ├── shared/      # Shared components
+│   └── visitor/     # Visitor-specific components
+├── components/       # Reusable UI components
+├── hooks/           # Custom React hooks
+├── lib/             # Utility functions
+├── store/           # Zustand store
+├── styles/          # Global styles
+└── types/           # TypeScript types
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Key Components
+- `SocketInitializer`: Manages Socket.IO connections
+- `MessageBubble`: Renders chat messages
+- `MessageInput`: Handles message input
+- `ChatHeader`: Displays chat header
+- `DarkModeToggle`: Manages theme switching
+- `Avatar`: Displays user avatars
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Data Storage
+- In-memory state management
+- Real-time synchronization via Socket.IO
+- Chat history maintained in Zustand store
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📈 Areas for Improvement
 
-## Learn More
+- **Core Features**
+  - Typing indicators
+  - Read receipts
+  - Message search
+  - Conversation archiving
 
-To learn more about Next.js, take a look at the following resources:
+- **Authentication**
+  - User authentication
+  - Role-based access
+  - Session management
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Agent Features**
+  - Agent presence/status
+  - Availability management
+  - Conversation assignment
+  - Performance metrics
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Additional Features**
+  - File sharing
+  - Rich text formatting
+  - Chat transcripts
+  - Analytics dashboard
 
-## Deploy on Vercel
+## 🚀 Getting Started
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/minicom.git
+   cd minicom
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+4. **Start the Socket.IO server**
+   ```bash
+   node server.js
+   ```
+
+5. **Open in browser**
+   - Admin: http://localhost:3000/admin
+   - Visitor: http://localhost:3000/visitor
+
+## 📝 Notes
+
+- No environment variables needed
+- Fully local development setup
+- Built-in TypeScript support
+- Hot reloading enabled
+
+## 📄 License
+
+MIT License - Feel free to use this project as a starting point for your own live chat implementation.
