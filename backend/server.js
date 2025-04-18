@@ -6,19 +6,22 @@ import cors from 'cors';
 const app = express();
 const server = http.createServer(app);
 
-// Enable CORS for all routes
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+// CORS configuration
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL 
+    : [process.env.FRONTEND_URL, 'http://localhost:3000'],
   methods: ['GET', 'POST'],
-  credentials: true
-}));
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+// Enable CORS for all routes
+app.use(cors(corsOptions));
 
 const io = new Server(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
+  cors: corsOptions,
+  path: '/socket.io/'
 });
 
 // Store active users and their socket IDs
