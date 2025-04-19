@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "@/styles/globals.css";
 import { SocketInitializer } from "@/components/SocketInitializer";
-import ErrorToastWrapper from '@/components/ErrorToastWrapper';
+import ErrorToastWrapper from '@/components/ErrorToast';
 
 const inter = Inter({ subsets: ["latin"] });
 

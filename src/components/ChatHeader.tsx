@@ -1,13 +1,14 @@
+import { Status } from '@/types';
+
 interface ChatHeaderProps {
   title: string;
-  status: 'online' | 'offline' | 'away';
+  status: Status;
 }
 
 export function ChatHeader({ title, status }: ChatHeaderProps) {
   const statusColors = {
-    online: 'bg-green-500',
-    offline: 'bg-gray-500',
-    away: 'bg-yellow-500',
+    [Status.ONLINE]: 'bg-green-500',
+    [Status.OFFLINE]: 'bg-gray-500',
   };
 
   return (

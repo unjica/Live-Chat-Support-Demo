@@ -1,23 +1,15 @@
-export type UserRole = 'visitor' | 'agent' | 'admin';
+import { Status, UserRole } from '@/types';
 
 export type User = {
   id: string;
   name: string;
   role: UserRole;
   avatarUrl?: string;
-  status?: 'online' | 'offline' | 'away';
-};
-
-export type Agent = User & {
-  role: 'agent';
-  department?: string;
-  activeConversations: number;
-  maxConversations: number;
+  status?: Status;
 };
 
 export type Visitor = User & {
-  role: 'visitor';
+  role: UserRole.VISITOR;
   ipAddress?: string;
-  userAgent?: string;
   lastSeen?: number;
-}; 
+};

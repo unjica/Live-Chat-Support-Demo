@@ -1,5 +1,4 @@
 import { Message, User } from '@/types';
-import { Avatar } from './Avatar';
 
 interface MessageBubbleProps {
   message: Message;

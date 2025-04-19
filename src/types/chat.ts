@@ -1,3 +1,5 @@
+import { Status } from '@/types';
+
 export type Message = {
   id: string;
   conversationId: string;
@@ -10,11 +12,10 @@ export type Message = {
 export type Conversation = {
   id: string;
   visitorId: string;
-  agentId?: string;
   messages: Message[];
   status: 'active' | 'waiting' | 'ended';
   startedAt: number;
   endedAt?: number;
 };
 
-export type ChatStatus = 'online' | 'offline' | 'away' | 'busy'; 
+export type ChatStatus = Status;

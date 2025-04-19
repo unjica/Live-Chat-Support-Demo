@@ -5,7 +5,7 @@ import { getSocket } from '@/lib/socket';
 import { useError } from '@/hooks/useError';
 import { MessageInput } from '@/components/MessageInput';
 import { useChatStore } from '@/store/chatStore';
-import { Message } from '@/types';
+import { Message, UserRole } from '@/types';
 
 export default function Chat() {
   const messages = useChatStore((state) => state.messages);
@@ -19,7 +19,7 @@ export default function Chat() {
       const visitorId = `visitor_${Math.random().toString(36).substr(2, 9)}`;
       setUser({
         id: visitorId,
-        role: 'visitor',
+        role: UserRole.VISITOR,
         name: `Visitor ${visitorId}`,
       });
 

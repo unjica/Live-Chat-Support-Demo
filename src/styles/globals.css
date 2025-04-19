@@ -31,8 +31,4 @@ body {
   .message-visitor {
     @apply bg-blue-100 dark:bg-blue-900;
   }
-
-  .message-agent {
-    @apply bg-gray-100 dark:bg-gray-800;
-  }
 } 

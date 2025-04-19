@@ -1,4 +1,4 @@
-import { User } from '@/types';
+import { User, Status } from '@/types';
 
 interface AvatarProps {
   user: User;
@@ -20,12 +20,6 @@ export function Avatar({ user, size = 'md' }: AvatarProps) {
       .toUpperCase();
   };
 
-  const getAvatarUrl = (seed: string) => {
-    return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
-      seed
-    )}`;
-  };
-
   return (
     <div className="relative">
       {user.avatarUrl ? (
@@ -44,10 +38,8 @@ export function Avatar({ user, size = 'md' }: AvatarProps) {
       {user.status && (
         <div
           className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${
-            user.status === 'online'
+            user.status === Status.ONLINE
               ? 'bg-green-500'
-              : user.status === 'away'
-              ? 'bg-yellow-500'
               : 'bg-gray-500'
           }`}
         />

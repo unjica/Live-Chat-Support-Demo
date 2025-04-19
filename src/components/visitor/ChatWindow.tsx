@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useChatStore } from '@/store/chatStore';
 import { MessageBubble } from '@/components/MessageBubble';
 import { MessageInput } from '@/components/shared/MessageInput';
@@ -51,7 +51,7 @@ export function ChatWindow({ conversationId, onClose }: ChatWindowProps) {
       <div 
         className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-600 transition-all duration-300 ease-in-out max-h-[calc(100vh-12rem)]"
       >
-        {conversationMessages.map((message, index) => (
+        {conversationMessages.map((message) => (
           <MessageBubble
             key={message.id}
             message={message}

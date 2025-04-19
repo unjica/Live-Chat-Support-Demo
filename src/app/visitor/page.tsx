@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useChatStore } from '@/store/chatStore';
 import { ChatWidget } from '@/components/visitor/ChatWidget';
 import { DarkModeToggle } from '@/components/DarkModeToggle';
+import { Status, UserRole } from '@/types';
 
 export default function VisitorPage() {
   const { user, setUser } = useChatStore();
@@ -23,8 +24,8 @@ export default function VisitorPage() {
       setUser({
         id: visitorId,
         name: `Visitor ${visitorId.slice(0, 4)}`,
-        role: 'visitor',
-        status: 'online',
+        role: UserRole.VISITOR,
+        status: Status.ONLINE,
         avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${visitorId}&backgroundColor=b6e3f4`,
       });
     }

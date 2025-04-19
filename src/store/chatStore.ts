@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Message, User } from '@/types';
+import { Message, User, UserRole } from '@/types';
 import { getSocket } from '@/lib/socket';
 
 interface ChatState {
@@ -9,7 +9,7 @@ interface ChatState {
   onlineVisitors: Set<string>;
   isChatFocused: boolean;
   selectedVisitorId: string | null;
-  role: 'admin' | 'visitor' | null;
+  role: UserRole | null;
   setUser: (user: User) => void;
   sendMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
   receiveMessage: (message: Message) => void;
@@ -17,7 +17,7 @@ interface ChatState {
   setIsChatFocused: (focused: boolean) => void;
   updateOnlineStatus: (visitorId: string, isOnline: boolean) => void;
   setOnlineVisitors: (visitorIds: string[]) => void;
-  setRole: (role: 'admin' | 'visitor') => void;
+  setRole: (role: UserRole) => void;
   clearChat: () => void;
 }
 

@@ -7,7 +7,7 @@ import { MessageInput } from '@/components/MessageInput';
 import { ChatHeader } from '@/components/ChatHeader';
 import { DarkModeToggle } from '@/components/DarkModeToggle';
 import { useMessageNotifications } from '@/hooks/useMessageNotifications';
-import { UserRole } from '@/types';
+import { UserRole, Status } from '@/types';
 
 export default function AdminPage() {
   const { user, setUser, conversations, sendMessage, isChatFocused, setIsChatFocused, onlineVisitors } = useChatStore();
@@ -42,7 +42,7 @@ export default function AdminPage() {
       const adminUser = {
         id: 'admin',
         name: 'Admin',
-        role: 'admin' as UserRole,
+        role: UserRole.ADMIN,
         avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=admin&backgroundColor=b6e3f4`,
       };
       setUser(adminUser);
@@ -164,7 +164,7 @@ export default function AdminPage() {
             <div className="hidden md:block border-b border-gray-200 dark:border-gray-700">
               <ChatHeader
                 title={`Chat with Visitor ${selectedVisitor.substring(0, 8)}`}
-                status={onlineVisitors.has(selectedVisitor) ? 'online' : 'offline'}
+                status={onlineVisitors.has(selectedVisitor) ? Status.ONLINE : Status.OFFLINE}
               />
             </div>
             <div className="flex-1 overflow-y-auto p-4 bg-[#efeae2] dark:bg-gray-900">
@@ -173,7 +173,7 @@ export default function AdminPage() {
                   key={message.id}
                   message={message}
                   isOwnMessage={message.senderId === user?.id}
-                  sender={message.senderId !== user?.id ? { id: message.senderId, name: `Visitor ${message.senderId.substring(0,8)}`, role: 'visitor' } : undefined}
+                  sender={message.senderId !== user?.id ? { id: message.senderId, name: `Visitor ${message.senderId.substring(0,8)}`, role: UserRole.VISITOR } : undefined}
                 />
               ))}
               <div ref={messagesEndRef} />

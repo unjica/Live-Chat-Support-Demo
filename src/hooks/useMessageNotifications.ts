@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Message } from '@/types';
+import { Message, UserRole } from '@/types';
 import { useSound } from '@/hooks/useSound';
 import { useChatStore } from '@/store/chatStore';
 
@@ -21,7 +21,7 @@ export function useMessageNotifications(
     if (!lastMessage) return;
 
     const isNewMessage = lastMessage.senderId !== userId;
-    const isVisitor = user?.role === 'visitor';
+    const isVisitor = user?.role === UserRole.VISITOR;
     
     // For visitors: play sound on any admin message
     // For admin: play sound only when chat is not focused
