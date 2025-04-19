@@ -1,182 +1,164 @@
-# Live Chat Support Demo
+# 💬 Live Chat Support Demo
 
-A real-time chat support application built with Next.js, Socket.IO, and TypeScript. This application demonstrates a WhatsApp-style chat interface with support for both visitor and admin interactions.
+> This repo is a **template** — click [Use this template](https://github.com/unjica/Live-Chat-Support-Demo/generate) to create your own real-time chat support app instantly!
 
-## Features
+A real-time support chat app built with **Next.js (App Router)**, **Socket.IO**, **Zustand**, and **Tailwind CSS**. Visitors can instantly chat with an admin, while both sides see messages update in real time. Admins can end a conversation, and all chats are locally persisted per role.
 
-- 💬 Real-time messaging using Socket.IO
-- 👥 Separate interfaces for visitors and admin
-- 📱 Responsive design with WhatsApp-inspired UI
-- 🔄 Real-time message status updates
-- 🎨 Modern UI with Tailwind CSS
-- 🌙 Dark mode support
-- 📊 Admin dashboard for managing multiple conversations
-- 💾 Message persistence:
-  - Admin: Messages stored in localStorage
-  - Visitor: Messages stored in sessionStorage
-- 👤 Visitor session management:
-  - Persistent visitor ID across page refreshes
-  - Session-based chat history
-- 🔒 Environment-based configuration
-- 🚀 Optimized for production deployment
+---
 
-## Tech Stack
+## ✨ Features
 
-- **Frontend:**
-  - Next.js 15.3
-  - React 19
-  - TypeScript
-  - Tailwind CSS
-  - Socket.IO Client
-  - Zustand (State Management)
+- ✅ Real-time chat with Socket.IO  
+- 🧑‍💻 Separate interfaces for **visitor** and **admin**  
+- 🧠 Role-based persistence:
+  - Visitor chats → `sessionStorage`
+  - Admin chats → `localStorage`
+- 🔄 Admin can **end** a conversation
+- 🕓 Visitor can **resume** the chat after it ends
+- 💻 Deployed on Vercel (frontend) + Railway (Socket.IO backend)
+- 💅 Styled with Tailwind CSS
 
-- **Backend:**
-  - Express.js
-  - Socket.IO Server
-  - Node.js
+---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
-├── src/                    # Frontend source code
-│   ├── app/               # Next.js app directory
-│   │   ├── admin/        # Admin dashboard pages
-│   │   └── visitor/      # Visitor chat pages
-│   ├── components/       # React components
-│   │   ├── shared/      # Shared components
-│   │   └── visitor/     # Visitor-specific components
-│   ├── hooks/           # Custom React hooks
-│   ├── lib/             # Utility functions
-│   ├── store/           # Zustand state management
-│   ├── types/           # TypeScript definitions
-│   └── styles/          # Global styles
-├── backend/              # Backend server
-│   ├── server.js        # Express and Socket.IO server
-│   └── package.json     # Backend dependencies
-├── public/              # Static assets
-└── package.json         # Frontend dependencies
+src/
+├── app/
+│   ├── admin/          → Admin dashboard view
+│   └── visitor/        → Visitor chat interface
+├── components/         → Shared chat & UI components
+├── store/              → Zustand state (chat logic)
+├── lib/                → Socket.IO client setup
+├── types/              → Message & user type definitions
+└── styles/             → Tailwind global styles
 ```
 
-## Getting Started
+---
 
-### Prerequisites
+## 🚀 One-Click Deploy
 
-- Node.js (v18 or later recommended)
-- npm or yarn
+Deploy your own version of this app in seconds:
 
-### Installation
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/unjica/Live-Chat-Support-Demo)
 
-1. Clone the repository:
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/oCcOIf?referralCode=unjica-chat-template)
+
+---
+
+## 🧑‍💻 How to Use This Template
+
+1. Click **[Use this template](https://github.com/unjica/Live-Chat-Support-Demo/generate)** to copy this repo into your account.
+2. Update environment variables:
+
+   **Frontend (`.env.local`):**
+   ```
+   NEXT_PUBLIC_API_URL=http://localhost:3001
+   ```
+
+   **Backend (`.env` or Railway variables):**
+   ```
+   FRONTEND_URL=http://localhost:3000
+   ```
+
+3. Run locally:
+
+   ```bash
+   npm install
+   npm run dev
+
+   # In a separate terminal
+   node server.js
+   ```
+
+4. Open two browser tabs:
+   - Admin: `http://localhost:3000/admin`
+   - Visitor: `http://localhost:3000/visitor`
+
+---
+
+## 🛰 Backend (Socket.IO Server)
+
+- Located in `server.js`
+- Uses `express`, `cors`, and `socket.io`
+- Listens on `process.env.PORT` for Railway compatibility
+- Handles the following events:
+  - `user_join`
+  - `send_message`
+  - `typing_start`, `typing_stop`
+  - `conversation_ended`, `conversation_resumed`
+
+---
+
+## 🧪 Dev Tips
+
+- Open admin and visitor tabs to simulate both roles
+- Test real-time message syncing
+- Test persistence:
+  - Reload the tab
+  - Visitor chat clears after closing the tab
+  - Admin chat stays saved across reloads (localStorage)
+- End conversation as admin and resume as visitor
+
+---
+
+## 🌍 Deployment Notes
+
+### Frontend → Vercel
+
 ```bash
-git clone https://github.com/unjica/Live-Chat-Support-Demo.git
-cd Live-Chat-Support-Demo
+vercel --prod
 ```
 
-2. Install frontend dependencies:
-```bash
-npm install
+Set the following in Vercel project settings:
+
+```
+NEXT_PUBLIC_API_URL=https://your-railway-backend.up.railway.app
 ```
 
-3. Install backend dependencies:
-```bash
-cd backend
-npm install
-cd ..
+---
+
+### Backend → Railway
+
+- Set start command: `node server.js`
+- Set environment variables:
+
+```
+FRONTEND_URL=https://your-vercel-project.vercel.app
 ```
 
-4. Set up environment variables:
-   - Copy `.env.example` to `.env` in the root directory
-   - Copy `backend/.env.example` to `backend/.env`
+- Make sure ports are not hardcoded — use `process.env.PORT`
 
-5. Start the development servers:
-```bash
-# In one terminal, start the backend server
-cd backend
-npm start
+---
 
-# In another terminal, start the frontend server
-npm run dev
-```
+## 🧠 Technologies Used
 
-6. Open your browser and visit:
-   - Visitor Chat: http://localhost:3000/visitor
-   - Admin Dashboard: http://localhost:3000/admin
+- [Next.js (App Router)](https://nextjs.org/)
+- [Socket.IO](https://socket.io/)
+- [Zustand](https://github.com/pmndrs/zustand)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Vercel](https://vercel.com/)
+- [Railway](https://railway.app/)
 
-## Features in Detail
+---
 
-### Visitor Interface
-- Real-time message delivery and status updates
-- Responsive design for all devices
-- Message history preserved in sessionStorage
-- Persistent visitor ID across page refreshes
-- Session-based chat experience
+## 💡 Future Improvements
 
-### Admin Dashboard
-- Multiple conversation management
-- Real-time updates for new messages
-- Conversation switching
-- Message history stored in localStorage
-- Persistent chat history across sessions
+- 📁 Export/download chat history
+- 🗃 Add backend persistence (DB)
+- 🔐 Auth for both roles
+- 👥 Multi-agent support
+- 💬 Typing indicators with avatars
+- 🔄 Support for parallel chats with multiple users
 
-### Storage Management
-- **Admin:**
-  - Messages stored in localStorage
-  - Persistent across browser sessions
-  - Organized by conversation
-- **Visitor:**
-  - Messages stored in sessionStorage
-  - Cleared when browser session ends
-  - Visitor ID persists across page refreshes
+---
 
-### Real-time Features
-- Instant message delivery
-- Typing indicators
-- Online/offline status
-- Message read receipts
-- Real-time conversation updates
+## 📄 License
 
-## Development
+MIT — use freely and modify as you wish!
 
-### Available Scripts
+---
 
-- `npm run dev` - Start Next.js development server
-- `npm run build` - Build the production application
-- `npm run start` - Start the production server
-- `npm run lint` - Run ESLint for code quality
+## 👋 Author
 
-### Backend Scripts
-- `cd backend && npm start` - Start the backend server
-
-### Running the Application
-
-To run the application, you'll need to start both the frontend and backend servers. You have two options:
-
-#### Option 1: Run Servers Separately
-```bash
-# Terminal 1 - Start the backend server
-cd backend
-npm start
-
-# Terminal 2 - Start the frontend server
-npm run dev
-```
-
-#### Option 2: Run Both Servers with a Single Command
-```bash
-# From the root directory
-npm run dev:all
-```
-
-## Environment Variables
-
-The application requires environment variables to be set up in both frontend and backend. You can find example files in:
-
-- Frontend: `.env.example` in the root directory
-- Backend: `backend/.env.example`
-
-### Frontend Variables (.env)
-- `NEXT_PUBLIC_API_URL` - The URL of your backend API server
-
-### Backend Variables (backend/.env)
-- `FRONTEND_URL` - The URL of your frontend application
-- `PORT` - The port number for the backend server
+Made with ❤️ by [Sanja Malovic](https://github.com/unjica)
