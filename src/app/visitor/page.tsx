@@ -11,7 +11,15 @@ export default function VisitorPage() {
   useEffect(() => {
     // Initialize visitor user if not already set
     if (!user) {
-      const visitorId = crypto.randomUUID();
+      // Try to get existing visitor ID from sessionStorage
+      const existingVisitorId = sessionStorage.getItem('visitor-id');
+      const visitorId = existingVisitorId || crypto.randomUUID();
+      
+      // If this is a new visitor, save the ID
+      if (!existingVisitorId) {
+        sessionStorage.setItem('visitor-id', visitorId);
+      }
+
       setUser({
         id: visitorId,
         name: `Visitor ${visitorId.slice(0, 4)}`,
