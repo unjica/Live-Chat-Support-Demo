@@ -11,6 +11,12 @@ A real-time chat support application built with Next.js, Socket.IO, and TypeScri
 - 🎨 Modern UI with Tailwind CSS
 - 🌙 Dark mode support
 - 📊 Admin dashboard for managing multiple conversations
+- 💾 Message persistence:
+  - Admin: Messages stored in localStorage
+  - Visitor: Messages stored in sessionStorage
+- 👤 Visitor session management:
+  - Persistent visitor ID across page refreshes
+  - Session-based chat history
 - 🔒 Environment-based configuration
 - 🚀 Optimized for production deployment
 
@@ -96,25 +102,38 @@ npm run dev
    - Visitor Chat: http://localhost:3000/visitor
    - Admin Dashboard: http://localhost:3000/admin
 
-## Environment Variables
+## Features in Detail
 
-The application requires environment variables to be set up in both frontend and backend. You can find example files in:
+### Visitor Interface
+- Real-time message delivery and status updates
+- Responsive design for all devices
+- Message history preserved in sessionStorage
+- Persistent visitor ID across page refreshes
+- Session-based chat experience
 
-- Frontend: `.env.example` in the root directory
-- Backend: `backend/.env.example`
+### Admin Dashboard
+- Multiple conversation management
+- Real-time updates for new messages
+- Conversation switching
+- Message history stored in localStorage
+- Persistent chat history across sessions
 
-### Frontend Variables (.env)
-- `NEXT_PUBLIC_API_URL` - The URL of your backend API server
+### Storage Management
+- **Admin:**
+  - Messages stored in localStorage
+  - Persistent across browser sessions
+  - Organized by conversation
+- **Visitor:**
+  - Messages stored in sessionStorage
+  - Cleared when browser session ends
+  - Visitor ID persists across page refreshes
 
-### Backend Variables (backend/.env)
-- `FRONTEND_URL` - The URL of your frontend application
-- `PORT` - The port number for the backend server
-
-To set up the environment variables:
-
-1. Copy `.env.example` to `.env` in the root directory
-2. Copy `backend/.env.example` to `backend/.env`
-3. Update the values in both `.env` files with your specific configuration
+### Real-time Features
+- Instant message delivery
+- Typing indicators
+- Online/offline status
+- Message read receipts
+- Real-time conversation updates
 
 ## Development
 
@@ -148,15 +167,16 @@ npm run dev
 npm run dev:all
 ```
 
-## Features in Detail
+## Environment Variables
 
-### Visitor Interface
-- Real-time message delivery and status updates
-- Responsive design for all devices
-- Message history preservation
+The application requires environment variables to be set up in both frontend and backend. You can find example files in:
 
-### Admin Dashboard
-- Multiple conversation management
-- Real-time updates for new messages
-- Conversation switching
-- Message history tracking
+- Frontend: `.env.example` in the root directory
+- Backend: `backend/.env.example`
+
+### Frontend Variables (.env)
+- `NEXT_PUBLIC_API_URL` - The URL of your backend API server
+
+### Backend Variables (backend/.env)
+- `FRONTEND_URL` - The URL of your frontend application
+- `PORT` - The port number for the backend server
