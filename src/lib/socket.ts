@@ -12,7 +12,7 @@ export const useErrorStore = create<ErrorState>((set) => ({
   setError: (error) => set({ error }),
 }));
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 let socket: Socket;
 
