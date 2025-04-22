@@ -2,26 +2,30 @@ import { useEffect, useState } from 'react';
 
 export function useDarkMode() {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
+  // After mounting, we have access to window
   useEffect(() => {
-    // Check localStorage and system preference
+    setMounted(true);
     const savedMode = localStorage.getItem('darkMode');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
     setIsDarkMode(savedMode ? savedMode === 'true' : prefersDark);
   }, []);
 
   useEffect(() => {
-    // Update localStorage and document class
+    if (!mounted) return;
+    
     localStorage.setItem('darkMode', isDarkMode.toString());
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, [isDarkMode]);
+  }, [isDarkMode, mounted]);
 
-  const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
+  const toggleDarkMode = () => {
+    setIsDarkMode((prev) => !prev);
+  };
 
-  return { isDarkMode, toggleDarkMode };
+  return { isDarkMode, toggleDarkMode, mounted };
 } 
