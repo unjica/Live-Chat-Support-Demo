@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { ChatWindow } from '@/components/visitor/ChatWindow';
 import { useChatStore } from '@/store/chatStore';
 import { useMessageNotifications } from '@/hooks/useMessageNotifications';
-import { Avatar } from '@/components/Avatar';
+import { Avatar } from '@/components/visitor/Avatar';
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);

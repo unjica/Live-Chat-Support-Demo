@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useChatStore } from '@/store/chatStore';
 import { ChatWidget } from '@/components/visitor/ChatWidget';
-import { DarkModeToggle } from '@/components/DarkModeToggle';
+import { DarkModeToggle } from '@/components/shared/DarkModeToggle';
 import { Status, UserRole } from '@/types';
 
 export default function VisitorPage() {

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useChatStore } from '@/store/chatStore';
-import { MessageBubble } from '@/components/MessageBubble';
+import { MessageBubble } from '@/components/shared/MessageBubble';
 import { MessageInput } from '@/components/shared/MessageInput';
 
 interface ChatWindowProps {

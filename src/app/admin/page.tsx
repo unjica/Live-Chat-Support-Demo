@@ -2,15 +2,15 @@
 
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useChatStore } from '@/store/chatStore';
-import { MessageBubble } from '@/components/MessageBubble';
-import { MessageInput } from '@/components/MessageInput';
-import { ChatHeader } from '@/components/ChatHeader';
-import { DarkModeToggle } from '@/components/DarkModeToggle';
+import { MessageBubble } from '@/components/shared/MessageBubble';
+import { MessageInput } from '@/components/shared/MessageInput';
+import { ChatHeader } from '@/components/admin/ChatHeader';
+import { DarkModeToggle } from '@/components/shared/DarkModeToggle';
 import { useMessageNotifications } from '@/hooks/useMessageNotifications';
 import { UserRole, Status } from '@/types';
 
 export default function AdminPage() {
-  const { user, setUser, conversations, sendMessage, isChatFocused, setIsChatFocused, onlineVisitors } = useChatStore();
+  const { user, setUser, conversations, isChatFocused, setIsChatFocused, onlineVisitors } = useChatStore();
   const [selectedVisitor, setSelectedVisitor] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -195,15 +195,7 @@ export default function AdminPage() {
               <div ref={messagesEndRef} />
             </div>
             <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-              <MessageInput
-                onSend={(content: string) =>
-                  sendMessage({
-                    conversationId: selectedVisitor,
-                    senderId: user?.id || 'admin',
-                    content,
-                  })
-                }
-              />
+              <MessageInput conversationId={selectedVisitor} />
             </div>
           </>
         ) : (

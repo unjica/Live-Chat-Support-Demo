@@ -1,27 +1,54 @@
-import { Message } from '@/types';
-import { format } from 'date-fns';
+import { Message, User } from '@/types';
 
 interface MessageBubbleProps {
   message: Message;
   isOwnMessage: boolean;
+  sender?: User;
 }
 
-export function MessageBubble({ message, isOwnMessage }: MessageBubbleProps) {
+export function MessageBubble({ message, isOwnMessage, sender }: MessageBubbleProps) {
   return (
-    <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4`}>
+    <div className={`flex gap-1 mb-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[70%] rounded-lg p-3 ${
+        className={`relative flex flex-col gap-1 p-2 rounded-2xl max-w-[70%] ${
           isOwnMessage
-            ? 'bg-blue-500 text-white rounded-br-none'
-            : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-none'
+            ? 'ml-auto bg-blue-200 dark:bg-blue-900 rounded-tr-none'
+            : 'bg-white dark:bg-gray-800 rounded-tl-none'
         }`}
       >
-        <div className="text-sm font-medium mb-1">
-          {message.senderId}
+        {!isOwnMessage && sender && (
+          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+            {sender.name}
+          </span>
+        )}
+        <div className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">
+          {message.content}
         </div>
-        <div className="text-sm">{message.content}</div>
-        <div className="text-xs mt-1 opacity-70">
-          {format(new Date(message.timestamp), 'HH:mm')}
+        <div className="flex items-center justify-end gap-1 text-[0.65rem] text-gray-500 dark:text-gray-400">
+          <span className="text-[0.6875rem] text-[#667781] dark:text-gray-400">
+            {new Date(message.timestamp).toLocaleTimeString([], { 
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true 
+            })}
+          </span>
+          {isOwnMessage && message.status && (
+            <span className="flex items-center">
+              {message.status === 'read' ? (
+                <svg className="w-3 h-3 text-blue-500 dark:text-blue-400" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M11.3 4.3L6 9.6l-2.3-2.3-1.4 1.4L6 12.4l6.7-6.7z"/>
+                </svg>
+              ) : message.status === 'delivered' ? (
+                <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M11.3 4.3L6 9.6l-2.3-2.3-1.4 1.4L6 12.4l6.7-6.7z"/>
+                </svg>
+              ) : (
+                <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 1.5A6.5 6.5 0 1 0 14.5 8 6.51 6.51 0 0 0 8 1.5zm0 12A5.5 5.5 0 1 1 13.5 8 5.51 5.51 0 0 1 8 13.5z"/>
+                </svg>
+              )}
+            </span>
+          )}
         </div>
       </div>
     </div>
