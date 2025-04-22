@@ -2,7 +2,7 @@
 
 > This repo is a **template** — click [Use this template](https://github.com/unjica/Live-Chat-Support-Demo/generate) to create your own real-time chat support app instantly!
 
-A real-time support chat app built with **Next.js (App Router)**, **Socket.IO**, **Zustand**, and **Tailwind CSS**. Visitors can instantly chat with an admin, while both sides see messages update in real time. Admins can end a conversation, and all chats are locally persisted per role.
+A real-time support chat app built with **Next.js (App Router)**, **Socket.IO**, **Zustand**, and **Tailwind CSS**. Visitors can instantly chat with an admin, while both sides see messages update in real time. All chats are locally persisted per role.
 
 ---
 
@@ -13,8 +13,6 @@ A real-time support chat app built with **Next.js (App Router)**, **Socket.IO**,
 - 🧠 Role-based persistence:
   - Visitor chats → `sessionStorage`
   - Admin chats → `localStorage`
-- 🔄 Admin can **end** a conversation
-- 🕓 Visitor can **resume** the chat after it ends
 - 💻 Deployed on Vercel (frontend) + Railway (Socket.IO backend)
 - 💅 Styled with Tailwind CSS
 
@@ -42,7 +40,7 @@ Deploy your own version of this app in seconds:
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/unjica/Live-Chat-Support-Demo)
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/oCcOIf?referralCode=unjica-chat-template)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/starters?template=node)
 
 ---
 
@@ -98,7 +96,6 @@ Deploy your own version of this app in seconds:
   - Reload the tab
   - Visitor chat clears after closing the tab
   - Admin chat stays saved across reloads (localStorage)
-- End conversation as admin and resume as visitor
 
 ---
 
