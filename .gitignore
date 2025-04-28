@@ -15,11 +15,11 @@
 /coverage
 
 # next.js
-/.next/
-/out/
+/frontend/.next/
 
 # production
-/build
+/backend/build
+/frontend/build
 
 # misc
 .DS_Store
