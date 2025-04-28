@@ -29,6 +29,7 @@ A real-time support chat app built with **Next.js (App Router)**, **Socket.IO**,
 │   │   ├── store/     → Zustand state
 │   │   ├── lib/       → Socket.IO client
 │   │   ├── types/     → Type definitions
+│   │   ├── config/    → Configuration files
 │   │   └── styles/    → Tailwind styles
 │   ├── public/        → Static assets
 │   ├── package.json   → Frontend dependencies
@@ -44,7 +45,101 @@ A real-time support chat app built with **Next.js (App Router)**, **Socket.IO**,
 
 ---
 
-## 🚀 One-Click Deploy
+## ⚙️ Configuration
+
+The application uses a centralized configuration system located in `frontend/src/config/`:
+
+### Chat Configuration (`chat.ts`)
+```typescript
+export const chatConfig = {
+  welcomeMessage: 'Hi 👋 How can we help you?',  // Initial greeting message
+  defaultAgentName: 'Support Team',  // Default name for support agents
+};
+```
+
+To modify the chat appearance or behavior:
+1. Update the values in `chatConfig`
+2. The changes will automatically reflect across all components using these settings
+
+### Environment Configuration
+- Frontend: `.env.local`
+  ```
+  NEXT_PUBLIC_API_URL=http://localhost:3001
+  ```
+- Backend: `.env`
+  ```
+  FRONTEND_URL=http://localhost:3000
+  PORT=3001
+  ```
+
+---
+
+## 🧠 State Management
+
+The application uses Zustand for state management with the following key stores:
+
+### Chat Store (`store/chatStore.ts`)
+```typescript
+interface ChatState {
+  messages: Message[];
+  user: User | null;
+  conversations: Record<string, Message[]>;
+  onlineVisitors: Set<string>;
+  isChatFocused: boolean;
+  selectedVisitorId: string | null;
+  role: UserRole | null;
+  // ... actions
+}
+```
+
+Key features:
+- Role-based persistence (admin/visitor)
+- Real-time message synchronization
+- Online status tracking
+- Conversation management
+
+### Usage Example
+```typescript
+const { messages, user, sendMessage } = useChatStore();
+
+// Send a message
+sendMessage({
+  conversationId: '123',
+  senderId: user.id,
+  content: 'Hello!'
+});
+```
+
+---
+
+## 🧩 Component Architecture
+
+The application follows a modular component structure:
+
+### Visitor Components
+- `ChatWidget`: Floating chat button and window container
+- `ChatWindow`: Main chat interface for visitors
+- `MessageBubble`: Individual message display
+- `MessageInput`: Message composition and sending
+
+### Admin Components
+- `ChatHeader`: Conversation header with visitor info
+- `VisitorList`: List of active visitors
+- `ChatContainer`: Main admin chat interface
+
+### Shared Components
+- `Avatar`: User avatar display
+- `DarkModeToggle`: Theme switching
+- `ErrorToast`: Error notifications
+
+### Component Communication
+- Components communicate through Zustand store
+- Real-time updates via Socket.IO
+- Props for component-specific configuration
+
+---
+
+## �� One-Click Deploy
 
 Deploy your own version of this app in seconds:
 

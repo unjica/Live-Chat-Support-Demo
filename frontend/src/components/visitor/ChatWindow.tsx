@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useChatStore } from '@/store/chatStore';
 import { MessageBubble } from '@/components/shared/MessageBubble';
 import { MessageInput } from '@/components/shared/MessageInput';
+import { chatConfig } from '@/config/chat';
 
 interface ChatWindowProps {
   conversationId: string;
@@ -31,7 +32,7 @@ export function ChatWindow({ conversationId, onClose }: ChatWindowProps) {
             </svg>
           </div>
           <div className="ml-3 min-w-0">
-            <h3 className="text-sm font-medium text-white truncate">Live Chat Support</h3>
+            <h3 className="text-sm font-medium text-white truncate">{chatConfig.defaultAgentName}</h3>
             <p className="text-xs text-gray-300 dark:text-gray-400">online</p>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { ChatWindow } from '@/components/visitor/ChatWindow';
 import { useChatStore } from '@/store/chatStore';
 import { useMessageNotifications } from '@/hooks/useMessageNotifications';
 import { Avatar } from '@/components/visitor/Avatar';
+import { chatConfig } from '@/config/chat';
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -39,8 +40,8 @@ export function ChatWidget() {
           isOpen ? 'scale-0' : 'scale-100'
         } ${
           unreadCount > 0
-            ? 'bg-blue-700 dark:bg-blue-500'
-            : 'bg-blue-700 dark:bg-blue-500'
+            ? `bg-blue-700 dark:bg-blue-500`
+            : `bg-blue-700 dark:bg-blue-500`
         }`}
       >
         {user ? (
@@ -63,7 +64,7 @@ export function ChatWidget() {
       {!isOpen && unreadCount === 0 && (
         <div className="fixed bottom-24 right-6 z-50 max-w-xs bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 transform transition-all duration-300 ease-in-out animate-fade-in">
           <p className="text-sm text-gray-800 dark:text-white">
-            👋 Hi there! Need help? We're here for you.
+            {chatConfig.welcomeMessage}
           </p>
           <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white dark:bg-gray-800 transform rotate-45" />
         </div>
