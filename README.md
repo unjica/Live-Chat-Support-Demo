@@ -4,6 +4,8 @@
 
 A real-time support chat app built with **Next.js (App Router)**, **Socket.IO**, **Zustand**, and **Tailwind CSS**. Visitors can instantly chat with an admin, while both sides see messages update in real time. All chats are locally persisted per role.
 
+> Featured on Dev.to 🚀 [Live Chat Support Starter Kit — Open Source!](https://dev.to/unjica/live-chat-support-starter-kit-open-source-79h)
+
 ---
 
 ## ✨ Features
@@ -136,78 +138,6 @@ The application follows a modular component structure:
 - Components communicate through Zustand store
 - Real-time updates via Socket.IO
 - Props for component-specific configuration
-
----
-
-## �� One-Click Deploy
-
-Deploy your own version of this app in seconds:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/unjica/Live-Chat-Support-Demo)
-
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/starters?template=node)
-
----
-
-## 🧑‍💻 How to Use This Template
-
-1. Click **[Use this template](https://github.com/unjica/Live-Chat-Support-Demo/generate)** to copy this repo into your account.
-2. Update environment variables:
-
-   **Frontend (`.env.local`):**
-   ```
-   NEXT_PUBLIC_API_URL=http://localhost:3001
-   ```
-
-   **Backend (`.env` or Railway variables):**
-   ```
-   FRONTEND_URL=http://localhost:3000
-   ```
-
-3. Run locally:
-
-   ```bash
-   # Install dependencies for both frontend and backend
-   npm install
-
-   # Start both frontend and backend
-   npm run dev
-
-   # Or run services separately:
-   # Frontend
-   cd frontend && npm run dev
-   # Backend
-   cd backend && npm run start
-   ```
-
-4. Open two browser tabs:
-   - Admin: `http://localhost:3000/admin`
-   - Visitor: `http://localhost:3000/visitor`
-
----
-
-## 🛰 Backend Architecture
-
-The backend is organized following a modular structure:
-
-- `server.js`: Main entry point that sets up Express and Socket.IO
-- `controllers/`: Contains Socket.IO event handlers for:
-  - User connections/disconnections
-  - Message handling
-  - Typing indicators
-  - Conversation state management
-- `services/`: Business logic for chat operations
-- `routes/`: HTTP endpoints (if needed for additional features)
-- `utils/`: Helper functions and utilities
-
-Key features:
-- Uses `express` for HTTP server
-- Implements `socket.io` for real-time communication
-- Handles the following events:
-  - `user_join`
-  - `send_message`
-  - `typing_start`, `typing_stop`
-  - `conversation_ended`, `conversation_resumed`
 
 ---
 
