@@ -21,15 +21,25 @@ A real-time support chat app built with **Next.js (App Router)**, **Socket.IO**,
 ## 📁 Project Structure
 
 ```
-src/
-├── app/
-│   ├── admin/          → Admin dashboard view
-│   └── visitor/        → Visitor chat interface
-├── components/         → Shared chat & UI components
-├── store/              → Zustand state (chat logic)
-├── lib/                → Socket.IO client setup
-├── types/              → Message & user type definitions
-└── styles/             → Tailwind global styles
+.
+├── frontend/           → Next.js frontend application
+│   ├── src/
+│   │   ├── app/       → Admin & visitor views
+│   │   ├── components → Shared components
+│   │   ├── store/     → Zustand state
+│   │   ├── lib/       → Socket.IO client
+│   │   ├── types/     → Type definitions
+│   │   └── styles/    → Tailwind styles
+│   ├── public/        → Static assets
+│   ├── package.json   → Frontend dependencies
+│   └── [config files] → Next.js, TypeScript, etc.
+└── backend/           → Socket.IO server
+    ├── server.js      → Main server entry point
+    ├── controllers/   → Socket.IO event handlers
+    ├── services/      → Business logic
+    ├── routes/        → HTTP routes (if needed)
+    ├── utils/         → Utility functions
+    └── package.json   → Backend dependencies
 ```
 
 ---
@@ -62,11 +72,17 @@ Deploy your own version of this app in seconds:
 3. Run locally:
 
    ```bash
+   # Install dependencies for both frontend and backend
    npm install
+
+   # Start both frontend and backend
    npm run dev
 
-   # In a separate terminal
-   node server.js
+   # Or run services separately:
+   # Frontend
+   cd frontend && npm run dev
+   # Backend
+   cd backend && npm run start
    ```
 
 4. Open two browser tabs:
@@ -75,11 +91,23 @@ Deploy your own version of this app in seconds:
 
 ---
 
-## 🛰 Backend (Socket.IO Server)
+## 🛰 Backend Architecture
 
-- Located in `server.js`
-- Uses `express`, `cors`, and `socket.io`
-- Listens on `process.env.PORT` for Railway compatibility
+The backend is organized following a modular structure:
+
+- `server.js`: Main entry point that sets up Express and Socket.IO
+- `controllers/`: Contains Socket.IO event handlers for:
+  - User connections/disconnections
+  - Message handling
+  - Typing indicators
+  - Conversation state management
+- `services/`: Business logic for chat operations
+- `routes/`: HTTP endpoints (if needed for additional features)
+- `utils/`: Helper functions and utilities
+
+Key features:
+- Uses `express` for HTTP server
+- Implements `socket.io` for real-time communication
 - Handles the following events:
   - `user_join`
   - `send_message`
@@ -104,6 +132,7 @@ Deploy your own version of this app in seconds:
 ### Frontend → Vercel
 
 ```bash
+cd frontend
 vercel --prod
 ```
 
