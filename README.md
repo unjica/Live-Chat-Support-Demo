@@ -131,18 +131,27 @@ Key features:
 
 ### Frontend → Vercel
 
-```bash
-cd frontend
-vercel --prod
-```
+1. Create a new project in Vercel and connect it to your repository
+2. Configure the following settings in Vercel:
+   - Framework Preset: Next.js
+   - Root Directory: frontend
+   - Build Command: `npm run build`
+   - Output Directory: `.next`
+   - Install Command: `npm install`
 
-Set the following in Vercel project settings:
+3. Set the following environment variables in Vercel:
+   ```
+   NEXT_PUBLIC_API_URL=https://your-railway-backend.up.railway.app
+   ```
 
-```
-NEXT_PUBLIC_API_URL=https://your-railway-backend.up.railway.app
-```
+4. Deploy using the Vercel CLI:
+   ```bash
+   # Install Vercel CLI if you haven't already
+   npm i -g vercel
 
----
+   # Deploy
+   vercel --prod
+   ```
 
 ### Backend → Railway
 
