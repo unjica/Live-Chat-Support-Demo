@@ -11,8 +11,10 @@ const server = http.createServer(app);
 // Explicitly define allowed origins
 const allowedOrigins = [
   process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL_2,
+  process.env.FRONTEND_URL_3,
   'http://localhost:3000'
-];
+].filter(Boolean); // Remove any undefined values
 
 // Express CORS middleware
 const corsOptions = {

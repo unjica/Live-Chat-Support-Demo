@@ -71,8 +71,12 @@ To modify the chat appearance or behavior:
 - Backend: `.env`
   ```
   FRONTEND_URL=http://localhost:3000
+  FRONTEND_URL_2=https://staging.your-app.com    # Optional: Additional frontend URL
+  FRONTEND_URL_3=https://dev.your-app.com        # Optional: Additional frontend URL
   PORT=3001
   ```
+
+  > 💡 **Multiple Frontend URLs**: You can configure multiple frontend URLs by setting additional environment variables (`FRONTEND_URL_2`, `FRONTEND_URL_3`, etc.). This is useful when you have multiple environments (staging, development, etc.) that need to connect to the same backend. The backend will automatically handle CORS for all configured URLs.
 
 ---
 
