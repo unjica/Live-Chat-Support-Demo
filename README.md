@@ -1,3 +1,11 @@
+![License](https://img.shields.io/github/license/unjica/Live-Chat-Support-Demo)
+![Last Commit](https://img.shields.io/github/last-commit/unjica/Live-Chat-Support-Demo)
+![Issues](https://img.shields.io/github/issues/unjica/Live-Chat-Support-Demo)
+![Stars](https://img.shields.io/github/stars/unjica/Live-Chat-Support-Demo?style=social)
+
+![Built with Next.js](https://img.shields.io/badge/Built%20with-Next.js-black)
+![Socket.IO](https://img.shields.io/badge/Realtime-Socket.IO-010101?logo=socket.io)
+
 # 💬 Live Chat Support Demo
 
 > This repo is a **template** — click [Use this template](https://github.com/unjica/Live-Chat-Support-Demo/generate) to create your own real-time chat support app instantly!
