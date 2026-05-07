@@ -21,20 +21,31 @@ export function MessageInput({ conversationId }: MessageInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const typingStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
+  /** Conversation id for the in-flight typing burst (survives prop changes until stop). */
+  const typingForConversationRef = useRef<string | null>(null);
 
-  /** Cancel pending idle timer and emit `typing_stop` if a burst was in flight. */
+  /** Cancel pending idle timer and emit `typing_stop` for the room that received `typing_start`. */
   const emitTypingStop = useCallback(() => {
     if (typingStopTimerRef.current) {
       clearTimeout(typingStopTimerRef.current);
       typingStopTimerRef.current = null;
     }
     if (isTypingRef.current) {
-      getSocket().emit('typing_stop');
+      const conv = typingForConversationRef.current;
+      if (conv) {
+        getSocket().emit('typing_stop', { conversationId: conv });
+      }
       isTypingRef.current = false;
+      typingForConversationRef.current = null;
     }
   }, []);
 
-  useEffect(() => () => emitTypingStop(), [emitTypingStop]);
+  /** On unmount or when `conversationId` changes, stop typing for the previous thread. */
+  useEffect(() => {
+    return () => {
+      emitTypingStop();
+    };
+  }, [conversationId, emitTypingStop]);
 
   /** (Re)arm the idle window after which `typing_stop` is emitted automatically. */
   const scheduleTypingStop = useCallback(() => {
@@ -80,7 +91,8 @@ export function MessageInput({ conversationId }: MessageInputProps) {
 
     if (value.trim()) {
       if (!isTypingRef.current) {
-        getSocket().emit('typing_start');
+        typingForConversationRef.current = conversationId;
+        getSocket().emit('typing_start', { conversationId });
         isTypingRef.current = true;
       }
       scheduleTypingStop();
