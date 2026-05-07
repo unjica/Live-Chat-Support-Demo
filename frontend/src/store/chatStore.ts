@@ -222,7 +222,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  /** Add or remove a visitor id from the live `onlineVisitors` set. */
+  /** Add or remove a visitor id from the live `onlineVisitors` set. When going offline, clear stale typing for that id (no `user_stopped_typing` on disconnect). */
   updateOnlineStatus: (visitorId, isOnline) => {
     set((state) => {
       const newOnlineVisitors = new Set(state.onlineVisitors);
@@ -231,7 +231,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
       } else {
         newOnlineVisitors.delete(visitorId);
       }
-      return { onlineVisitors: newOnlineVisitors };
+      const newTypingUserIds = new Set(state.typingUserIds);
+      if (!isOnline) {
+        newTypingUserIds.delete(visitorId);
+      }
+      return { onlineVisitors: newOnlineVisitors, typingUserIds: newTypingUserIds };
     });
   },
 

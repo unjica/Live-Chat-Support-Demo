@@ -27,6 +27,10 @@ export default function AdminPage() {
     return selectedVisitor ? conversations[selectedVisitor] || [] : [];
   }, [selectedVisitor, conversations]);
 
+  const selectedVisitorIsTyping = Boolean(
+    selectedVisitor && typingUserIds.has(selectedVisitor)
+  );
+
   // Get all messages for notifications
   const allMessages = useMemo(() => {
     return Object.values(conversations).flat();
@@ -70,10 +74,10 @@ export default function AdminPage() {
     }
   }, [selectedVisitor, resetUnreadCount]);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages or typing-at-bottom changes
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [selectedConversation]);
+  }, [selectedConversation, selectedVisitorIsTyping]);
 
   const handleSelectVisitor = (visitorId: string) => {
     setSelectedVisitor(visitorId);
@@ -186,11 +190,6 @@ export default function AdminPage() {
               />
             </div>
             <div className="flex-1 overflow-y-auto p-4 bg-[#efeae2] dark:bg-gray-900">
-              {selectedVisitor && typingUserIds.has(selectedVisitor) && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 italic" aria-live="polite">
-                  Visitor {selectedVisitor.substring(0, 8)} is typing…
-                </p>
-              )}
               {selectedConversation.map((message) => (
                 <MessageBubble
                   key={message.id}
@@ -199,6 +198,11 @@ export default function AdminPage() {
                   sender={message.senderId !== user?.id ? { id: message.senderId, name: `Visitor ${message.senderId.substring(0,8)}`, role: UserRole.VISITOR } : undefined}
                 />
               ))}
+              {selectedVisitor && typingUserIds.has(selectedVisitor) && (
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-2 italic" aria-live="polite">
+                  Visitor {selectedVisitor.substring(0, 8)} is typing…
+                </p>
+              )}
               <div ref={messagesEndRef} />
             </div>
             <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
