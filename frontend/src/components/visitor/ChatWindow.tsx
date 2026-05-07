@@ -3,7 +3,6 @@ import { useChatStore } from '@/store/chatStore';
 import { MessageBubble } from '@/components/shared/MessageBubble';
 import { MessageInput } from '@/components/shared/MessageInput';
 import { chatConfig } from '@/config/chat';
-import { UserRole } from '@/types';
 
 interface ChatWindowProps {
   conversationId: string;
@@ -14,7 +13,7 @@ interface ChatWindowProps {
 export function ChatWindow({ conversationId, onClose }: ChatWindowProps) {
   const { messages, user, typingUserIds } = useChatStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const supportIsTyping = typingUserIds.has(UserRole.ADMIN);
+  const supportIsTyping = typingUserIds.has(chatConfig.demoAdminUserId);
 
   const conversationMessages = messages.filter(
     (msg) => msg.conversationId === conversationId

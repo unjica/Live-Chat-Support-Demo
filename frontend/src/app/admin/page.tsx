@@ -8,6 +8,7 @@ import { ChatHeader } from '@/components/admin/ChatHeader';
 import { DarkModeToggle } from '@/components/shared/DarkModeToggle';
 import { useMessageNotifications } from '@/hooks/useMessageNotifications';
 import { UserRole, Status } from '@/types';
+import { chatConfig } from '@/config/chat';
 import Image from 'next/image';
 
 /** Agent dashboard: conversation list, thread view, and reply composer. */
@@ -46,10 +47,12 @@ export default function AdminPage() {
   useEffect(() => {
     if (!user) {
       const adminUser = {
-        id: 'admin',
+        id: chatConfig.demoAdminUserId,
         name: 'Admin',
         role: UserRole.ADMIN,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=admin&backgroundColor=b6e3f4`,
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
+          chatConfig.demoAdminUserId
+        )}&backgroundColor=b6e3f4`,
       };
       setUser(adminUser);
     }
