@@ -92,12 +92,22 @@ export const handleSocketConnection = (io, socket) => {
   });
 
   socket.on('disconnect', () => {
-    const user = removeUser(socket.id);
-    if (user) {
-      // Broadcast to admin that this visitor is offline
-      if (user.role === 'visitor') {
-        io.emit('visitor_offline', user.id);
+    const rooms = [...socket.rooms];
+    const user = getUser(socket.id);
+
+    // Admins join every `conv:*` room; if they disconnect while "typing", visitors never get
+    // `typing_stop` from the client — clear admin typing per thread they were in.
+    if (user?.role === 'admin') {
+      for (const room of rooms) {
+        if (room.startsWith('conv:')) {
+          socket.to(room).emit('user_stopped_typing', user);
+        }
       }
+    }
+
+    const removed = removeUser(socket.id);
+    if (removed?.role === 'visitor') {
+      io.emit('visitor_offline', removed.id);
     }
   });
 };
