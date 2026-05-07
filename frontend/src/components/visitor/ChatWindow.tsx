@@ -3,6 +3,7 @@ import { useChatStore } from '@/store/chatStore';
 import { MessageBubble } from '@/components/shared/MessageBubble';
 import { MessageInput } from '@/components/shared/MessageInput';
 import { chatConfig } from '@/config/chat';
+import { UserRole } from '@/types';
 
 interface ChatWindowProps {
   conversationId: string;
@@ -10,8 +11,9 @@ interface ChatWindowProps {
 }
 
 export function ChatWindow({ conversationId, onClose }: ChatWindowProps) {
-  const { messages, user } = useChatStore();
+  const { messages, user, typingUserIds } = useChatStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const supportIsTyping = typingUserIds.has(UserRole.ADMIN);
 
   const conversationMessages = messages.filter(
     (msg) => msg.conversationId === conversationId
@@ -19,7 +21,7 @@ export function ChatWindow({ conversationId, onClose }: ChatWindowProps) {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [conversationMessages]);
+  }, [conversationMessages, supportIsTyping]);
 
   return (
     <div className="fixed bottom-0 right-0 w-full h-[calc(100vh-4rem)] sm:w-[380px] sm:h-[600px] sm:bottom-6 sm:right-6 bg-gray-100 dark:bg-gray-900 rounded-lg shadow-xl flex flex-col overflow-hidden transition-all duration-300 ease-in-out">
@@ -52,6 +54,11 @@ export function ChatWindow({ conversationId, onClose }: ChatWindowProps) {
       <div 
         className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-600 transition-all duration-300 ease-in-out max-h-[calc(100vh-12rem)]"
       >
+        {supportIsTyping && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 italic" aria-live="polite">
+            {chatConfig.defaultAgentName} is typing…
+          </p>
+        )}
         {conversationMessages.map((message) => (
           <MessageBubble
             key={message.id}

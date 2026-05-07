@@ -1,20 +1,48 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useChatStore } from '@/store/chatStore';
+import { getSocket } from '@/lib/socket';
 
 interface MessageInputProps {
   conversationId: string;
 }
 
+const TYPING_IDLE_MS = 2000;
+
 export function MessageInput({ conversationId }: MessageInputProps) {
   const [message, setMessage] = useState('');
   const { sendMessage, user } = useChatStore();
   const inputRef = useRef<HTMLInputElement>(null);
+  const typingStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTypingRef = useRef(false);
+
+  const emitTypingStop = useCallback(() => {
+    if (typingStopTimerRef.current) {
+      clearTimeout(typingStopTimerRef.current);
+      typingStopTimerRef.current = null;
+    }
+    if (isTypingRef.current) {
+      getSocket().emit('typing_stop');
+      isTypingRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => () => emitTypingStop(), [emitTypingStop]);
+
+  const scheduleTypingStop = useCallback(() => {
+    if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
+    typingStopTimerRef.current = setTimeout(() => {
+      typingStopTimerRef.current = null;
+      emitTypingStop();
+    }, TYPING_IDLE_MS);
+  }, [emitTypingStop]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || !user) return;
+
+    emitTypingStop();
 
     sendMessage({
       conversationId,
@@ -35,6 +63,23 @@ export function MessageInput({ conversationId }: MessageInputProps) {
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setMessage(value);
+
+    if (!user) return;
+
+    if (value.trim()) {
+      if (!isTypingRef.current) {
+        getSocket().emit('typing_start');
+        isTypingRef.current = true;
+      }
+      scheduleTypingStop();
+    } else {
+      emitTypingStop();
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="flex items-end gap-2">
       <button
@@ -50,7 +95,7 @@ export function MessageInput({ conversationId }: MessageInputProps) {
           ref={inputRef}
           type="text"
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={handleChange}
           onKeyDown={handleKeyDown}
           placeholder="Type a message"
           className="w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-700 focus:outline-none text-[#111b21] dark:text-white placeholder-[#667781] dark:placeholder-gray-400 text-base"

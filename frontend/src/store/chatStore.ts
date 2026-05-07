@@ -7,6 +7,7 @@ interface ChatState {
   user: User | null;
   conversations: Record<string, Message[]>;
   onlineVisitors: Set<string>;
+  typingUserIds: Set<string>;
   isChatFocused: boolean;
   selectedVisitorId: string | null;
   role: UserRole | null;
@@ -18,6 +19,7 @@ interface ChatState {
   updateOnlineStatus: (visitorId: string, isOnline: boolean) => void;
   setOnlineVisitors: (visitorIds: string[]) => void;
   setRole: (role: UserRole) => void;
+  setTypingUser: (userId: string, isTyping: boolean) => void;
   clearChat: () => void;
 }
 
@@ -58,6 +60,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   user: null,
   conversations: {},
   onlineVisitors: new Set(),
+  typingUserIds: new Set(),
   isChatFocused: true,
   selectedVisitorId: null,
   role: null,
@@ -157,6 +160,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const { user } = get();
     if (!user) return;
 
+    get().setTypingUser(message.senderId, false);
+
     if (user.role === 'admin') {
       set((state) => {
         const newConversations = {
@@ -211,11 +216,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   setIsChatFocused: (focused) => set({ isChatFocused: focused }),
 
+  setTypingUser: (userId, isTyping) => {
+    set((state) => {
+      const next = new Set(state.typingUserIds);
+      if (isTyping) next.add(userId);
+      else next.delete(userId);
+      return { typingUserIds: next };
+    });
+  },
+
   clearChat: () => {
     const { role } = get();
     if (!role) return;
 
-    set({ messages: [] });
+    set({
+      messages: [],
+      ...(role === 'admin' ? { conversations: {} } : {}),
+      typingUserIds: new Set(),
+    });
     
     // Clear storage
     const storage = role === 'admin' ? getStorage('local') : getStorage('session');

@@ -53,6 +53,14 @@ export const initializeSocket = () => {
     socket.on('receive_message', (message) => {
       useChatStore.getState().receiveMessage(message);
     });
+
+    socket.on('user_typing', (payload: { id: string }) => {
+      if (payload?.id) useChatStore.getState().setTypingUser(payload.id, true);
+    });
+
+    socket.on('user_stopped_typing', (payload: { id: string }) => {
+      if (payload?.id) useChatStore.getState().setTypingUser(payload.id, false);
+    });
   }
   return socket;
 };

@@ -11,7 +11,7 @@ import { UserRole, Status } from '@/types';
 import Image from 'next/image';
 
 export default function AdminPage() {
-  const { user, setUser, conversations, isChatFocused, setIsChatFocused, onlineVisitors } = useChatStore();
+  const { user, setUser, conversations, isChatFocused, setIsChatFocused, onlineVisitors, typingUserIds } = useChatStore();
   const [selectedVisitor, setSelectedVisitor] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -185,6 +185,11 @@ export default function AdminPage() {
               />
             </div>
             <div className="flex-1 overflow-y-auto p-4 bg-[#efeae2] dark:bg-gray-900">
+              {selectedVisitor && typingUserIds.has(selectedVisitor) && (
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 italic" aria-live="polite">
+                  Visitor {selectedVisitor.substring(0, 8)} is typing…
+                </p>
+              )}
               {selectedConversation.map((message) => (
                 <MessageBubble
                   key={message.id}
