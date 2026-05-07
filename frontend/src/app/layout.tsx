@@ -1,3 +1,6 @@
+/**
+ * Root HTML shell: fonts, global styles, socket bootstrap, and global error toast.
+ */
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "@/styles/globals.css";
@@ -54,6 +57,7 @@ export const metadata: Metadata = {
   },
 };
 
+/** Next.js App Router root layout wrapping all pages. */
 export default function RootLayout({
   children,
 }: {

@@ -6,6 +6,7 @@ import { ChatWidget } from '@/components/visitor/ChatWidget';
 import { DarkModeToggle } from '@/components/shared/DarkModeToggle';
 import { Status, UserRole } from '@/types';
 
+/** Demo marketing page plus floating chat widget for the visitor role. */
 export default function VisitorPage() {
   const { user, setUser } = useChatStore();
 
@@ -39,7 +40,7 @@ export default function VisitorPage() {
             Welcome to Our Demo Site
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
-            Experience our real-time chat support system in action. Click the chat button in the bottom-right corner to start a conversation with our AI-powered assistant.
+            Experience our real-time chat support system in action. Click the chat button in the bottom-right corner to reach a member of our support team.
           </p>
           <div className="absolute top-4 right-4">
             <DarkModeToggle />
@@ -83,7 +84,7 @@ export default function VisitorPage() {
 
         <div className="mt-20 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            © 2025 Live Chat Support Demo. All rights reserved.
+            © 2026 Live Chat Support Demo. All rights reserved.
           </p>
         </div>
       </div>

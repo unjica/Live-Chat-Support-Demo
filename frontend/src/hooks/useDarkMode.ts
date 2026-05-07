@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
 
+/**
+ * Sync dark mode with `localStorage`, system preference, and the `dark` class on `<html>`.
+ *
+ * @returns `{ isDarkMode, toggleDarkMode, mounted }` — `mounted` avoids SSR hydration mismatch.
+ */
 export function useDarkMode() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mounted, setMounted] = useState(false);

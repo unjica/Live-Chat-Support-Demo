@@ -1,20 +1,67 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useChatStore } from '@/store/chatStore';
+import { getSocket } from '@/lib/socket';
 
 interface MessageInputProps {
   conversationId: string;
 }
 
+const TYPING_IDLE_MS = 2000;
+
+/**
+ * Controlled chat composer: sends messages and emits typing start/stop over Socket.IO.
+ *
+ * @param conversationId - Thread key (visitor id for admin replies; visitor’s own id in widget).
+ */
 export function MessageInput({ conversationId }: MessageInputProps) {
   const [message, setMessage] = useState('');
   const { sendMessage, user } = useChatStore();
   const inputRef = useRef<HTMLInputElement>(null);
+  const typingStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTypingRef = useRef(false);
+  /** Conversation id for the in-flight typing burst (survives prop changes until stop). */
+  const typingForConversationRef = useRef<string | null>(null);
 
+  /** Cancel pending idle timer and emit `typing_stop` for the room that received `typing_start`. */
+  const emitTypingStop = useCallback(() => {
+    if (typingStopTimerRef.current) {
+      clearTimeout(typingStopTimerRef.current);
+      typingStopTimerRef.current = null;
+    }
+    if (isTypingRef.current) {
+      const conv = typingForConversationRef.current;
+      if (conv) {
+        getSocket().emit('typing_stop', { conversationId: conv });
+      }
+      isTypingRef.current = false;
+      typingForConversationRef.current = null;
+    }
+  }, []);
+
+  /** On unmount or when `conversationId` changes, stop typing for the previous thread. */
+  useEffect(() => {
+    return () => {
+      emitTypingStop();
+    };
+  }, [conversationId, emitTypingStop]);
+
+  /** (Re)arm the idle window after which `typing_stop` is emitted automatically. */
+  const scheduleTypingStop = useCallback(() => {
+    if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
+    typingStopTimerRef.current = setTimeout(() => {
+      typingStopTimerRef.current = null;
+      emitTypingStop();
+    }, TYPING_IDLE_MS);
+  }, [emitTypingStop]);
+
+  /** Validate, send the trimmed message, reset local state, and end typing. */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || !user) return;
+
+    emitTypingStop();
 
     sendMessage({
       conversationId,
@@ -27,11 +74,30 @@ export function MessageInput({ conversationId }: MessageInputProps) {
     inputRef.current?.focus();
   };
 
-  // Handle Enter key for sending
+  /** Submit on Enter while ignoring Shift+Enter (reserved for future multiline). */
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
+    }
+  };
+
+  /** Keep local text in sync and drive debounced typing start/stop emissions. */
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setMessage(value);
+
+    if (!user) return;
+
+    if (value.trim()) {
+      if (!isTypingRef.current) {
+        typingForConversationRef.current = conversationId;
+        getSocket().emit('typing_start', { conversationId });
+        isTypingRef.current = true;
+      }
+      scheduleTypingStop();
+    } else {
+      emitTypingStop();
     }
   };
 
@@ -50,7 +116,7 @@ export function MessageInput({ conversationId }: MessageInputProps) {
           ref={inputRef}
           type="text"
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={handleChange}
           onKeyDown={handleKeyDown}
           placeholder="Type a message"
           className="w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-700 focus:outline-none text-[#111b21] dark:text-white placeholder-[#667781] dark:placeholder-gray-400 text-base"

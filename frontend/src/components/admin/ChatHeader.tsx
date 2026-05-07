@@ -5,6 +5,7 @@ interface ChatHeaderProps {
   status: Status;
 }
 
+/** Admin thread header showing title and online/offline pill. */
 export function ChatHeader({ title, status }: ChatHeaderProps) {
   const statusColors = {
     [Status.ONLINE]: 'bg-green-500',

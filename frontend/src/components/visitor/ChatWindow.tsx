@@ -9,9 +9,11 @@ interface ChatWindowProps {
   onClose: () => void;
 }
 
+/** Visitor-side chat panel: scrollable history, typing hint, and composer. */
 export function ChatWindow({ conversationId, onClose }: ChatWindowProps) {
-  const { messages, user } = useChatStore();
+  const { messages, user, typingUserIds } = useChatStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const supportIsTyping = typingUserIds.has(chatConfig.demoAdminUserId);
 
   const conversationMessages = messages.filter(
     (msg) => msg.conversationId === conversationId
@@ -19,7 +21,7 @@ export function ChatWindow({ conversationId, onClose }: ChatWindowProps) {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [conversationMessages]);
+  }, [conversationMessages, supportIsTyping]);
 
   return (
     <div className="fixed bottom-0 right-0 w-full h-[calc(100vh-4rem)] sm:w-[380px] sm:h-[600px] sm:bottom-6 sm:right-6 bg-gray-100 dark:bg-gray-900 rounded-lg shadow-xl flex flex-col overflow-hidden transition-all duration-300 ease-in-out">
@@ -60,6 +62,11 @@ export function ChatWindow({ conversationId, onClose }: ChatWindowProps) {
             sender={message.senderId === user?.id ? user : undefined}
           />
         ))}
+        {supportIsTyping && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-2 italic" aria-live="polite">
+            {chatConfig.defaultAgentName} is typing…
+          </p>
+        )}
         <div ref={messagesEndRef} />
       </div>
 

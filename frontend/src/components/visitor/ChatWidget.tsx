@@ -7,6 +7,7 @@ import { useMessageNotifications } from '@/hooks/useMessageNotifications';
 import { Avatar } from '@/components/visitor/Avatar';
 import { chatConfig } from '@/config/chat';
 
+/** Floating launcher + optional `ChatWindow` for the visitor experience. */
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, messages } = useChatStore();

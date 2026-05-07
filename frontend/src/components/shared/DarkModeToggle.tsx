@@ -1,5 +1,6 @@
 import { useDarkMode } from '@/hooks/useDarkMode';
 
+/** Accessible toggle bound to `useDarkMode` for light/dark theme switching. */
 export function DarkModeToggle() {
   const { isDarkMode, toggleDarkMode } = useDarkMode();
 

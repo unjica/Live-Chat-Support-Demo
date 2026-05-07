@@ -19,6 +19,7 @@ A real-time support chat app built with **Next.js (App Router)**, **Socket.IO**,
 ## ✨ Features
 
 - ✅ Real-time chat with Socket.IO  
+- ⌨️ Typing indicators (visitor ↔ admin)  
 - 🧑‍💻 Separate interfaces for **visitor** and **admin**  
 - 🧠 Role-based persistence:
   - Visitor chats → `sessionStorage`
@@ -145,6 +146,7 @@ The application follows a modular component structure:
 - `Avatar`: User avatar display
 - `DarkModeToggle`: Theme switching
 - `ErrorToast`: Error notifications
+- `MessageInput`: Sends messages and emits Socket.IO typing start/stop (debounced idle)
 
 ### Component Communication
 - Components communicate through Zustand store
@@ -220,7 +222,6 @@ FRONTEND_URL=https://your-vercel-project.vercel.app
 - 🗃 Add backend persistence (DB)
 - 🔐 Auth for both roles
 - 👥 Multi-agent support
-- 💬 Typing indicators with avatars
 - 🔄 Support for parallel chats with multiple users
 
 ---

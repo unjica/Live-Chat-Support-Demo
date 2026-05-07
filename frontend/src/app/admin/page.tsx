@@ -8,10 +8,12 @@ import { ChatHeader } from '@/components/admin/ChatHeader';
 import { DarkModeToggle } from '@/components/shared/DarkModeToggle';
 import { useMessageNotifications } from '@/hooks/useMessageNotifications';
 import { UserRole, Status } from '@/types';
+import { chatConfig } from '@/config/chat';
 import Image from 'next/image';
 
+/** Agent dashboard: conversation list, thread view, and reply composer. */
 export default function AdminPage() {
-  const { user, setUser, conversations, isChatFocused, setIsChatFocused, onlineVisitors } = useChatStore();
+  const { user, setUser, conversations, isChatFocused, setIsChatFocused, onlineVisitors, typingUserIds } = useChatStore();
   const [selectedVisitor, setSelectedVisitor] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -25,6 +27,10 @@ export default function AdminPage() {
   const selectedConversation = useMemo(() => {
     return selectedVisitor ? conversations[selectedVisitor] || [] : [];
   }, [selectedVisitor, conversations]);
+
+  const selectedVisitorIsTyping = Boolean(
+    selectedVisitor && typingUserIds.has(selectedVisitor)
+  );
 
   // Get all messages for notifications
   const allMessages = useMemo(() => {
@@ -41,10 +47,12 @@ export default function AdminPage() {
   useEffect(() => {
     if (!user) {
       const adminUser = {
-        id: 'admin',
+        id: chatConfig.demoAdminUserId,
         name: 'Admin',
         role: UserRole.ADMIN,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=admin&backgroundColor=b6e3f4`,
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
+          chatConfig.demoAdminUserId
+        )}&backgroundColor=b6e3f4`,
       };
       setUser(adminUser);
     }
@@ -69,10 +77,10 @@ export default function AdminPage() {
     }
   }, [selectedVisitor, resetUnreadCount]);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages or typing-at-bottom changes
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [selectedConversation]);
+  }, [selectedConversation, selectedVisitorIsTyping]);
 
   const handleSelectVisitor = (visitorId: string) => {
     setSelectedVisitor(visitorId);
@@ -193,6 +201,11 @@ export default function AdminPage() {
                   sender={message.senderId !== user?.id ? { id: message.senderId, name: `Visitor ${message.senderId.substring(0,8)}`, role: UserRole.VISITOR } : undefined}
                 />
               ))}
+              {selectedVisitor && typingUserIds.has(selectedVisitor) && (
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-2 italic" aria-live="polite">
+                  Visitor {selectedVisitor.substring(0, 8)} is typing…
+                </p>
+              )}
               <div ref={messagesEndRef} />
             </div>
             <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
