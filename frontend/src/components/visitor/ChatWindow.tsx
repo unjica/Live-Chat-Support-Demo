@@ -10,6 +10,7 @@ interface ChatWindowProps {
   onClose: () => void;
 }
 
+/** Visitor-side chat panel: scrollable history, typing hint, and composer. */
 export function ChatWindow({ conversationId, onClose }: ChatWindowProps) {
   const { messages, user, typingUserIds } = useChatStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);

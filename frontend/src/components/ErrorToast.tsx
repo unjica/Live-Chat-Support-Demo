@@ -46,4 +46,5 @@ const ErrorToastWrapper: React.FC = () => {
   return <ErrorToast message={error} onClose={handleClose} />;
 };
 
+/** Renders a dismissible toast when `useErrorStore` holds a non-null message. */
 export default ErrorToastWrapper;

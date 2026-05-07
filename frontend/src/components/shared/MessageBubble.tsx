@@ -6,6 +6,9 @@ interface MessageBubbleProps {
   sender?: User;
 }
 
+/**
+ * Single chat row with alignment and optional sender label for the opposite party.
+ */
 export function MessageBubble({ message, isOwnMessage, sender }: MessageBubbleProps) {
   return (
     <div className={`flex gap-1 mb-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>

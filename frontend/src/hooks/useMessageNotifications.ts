@@ -5,6 +5,14 @@ import { Message, UserRole } from '@/types';
 import { useSound } from '@/hooks/useSound';
 import { useChatStore } from '@/store/chatStore';
 
+/**
+ * Track unread message count and optionally play a sound when new messages arrive.
+ *
+ * @param messages - Current thread messages (flat list or derived).
+ * @param isChatFocused - When false (admin), still notifies on inbound messages.
+ * @param userId - Current user id; used to detect messages from others.
+ * @returns `{ unreadCount, resetUnreadCount }`.
+ */
 export function useMessageNotifications(
   messages: Message[],
   isChatFocused: boolean,

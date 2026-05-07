@@ -10,6 +10,7 @@ import { useMessageNotifications } from '@/hooks/useMessageNotifications';
 import { UserRole, Status } from '@/types';
 import Image from 'next/image';
 
+/** Agent dashboard: conversation list, thread view, and reply composer. */
 export default function AdminPage() {
   const { user, setUser, conversations, isChatFocused, setIsChatFocused, onlineVisitors, typingUserIds } = useChatStore();
   const [selectedVisitor, setSelectedVisitor] = useState<string | null>(null);

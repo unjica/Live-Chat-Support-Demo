@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
+/**
+ * Deferred audio notification after first user gesture (browser autoplay policy).
+ *
+ * @returns `{ playSound, hasInteracted }` — `playSound` is a no-op until interaction.
+ */
 export function useSound() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [hasInteracted, setHasInteracted] = useState(false);

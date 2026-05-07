@@ -1,6 +1,16 @@
 import { addUser, removeUser, getUser, getOnlineVisitors } from '../services/userService.js';
 import { validateUserData, formatMessage } from '../utils/helpers.js';
 
+/**
+ * Wire Socket.IO event handlers for a single client connection.
+ *
+ * Handles `user_join`, `send_message`, typing events, and `disconnect`, coordinating
+ * presence broadcasts and global message fan-out via `io`.
+ *
+ * @param {import('socket.io').Server} io - Socket.IO server instance.
+ * @param {import('socket.io').Socket} socket - Connected client socket.
+ * @returns {void}
+ */
 export const handleSocketConnection = (io, socket) => {
   socket.on('user_join', (userData) => {
     if (!validateUserData(userData)) {
@@ -53,4 +63,4 @@ export const handleSocketConnection = (io, socket) => {
       }
     }
   });
-}; 
+};

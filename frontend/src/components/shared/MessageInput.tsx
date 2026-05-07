@@ -10,6 +10,11 @@ interface MessageInputProps {
 
 const TYPING_IDLE_MS = 2000;
 
+/**
+ * Controlled chat composer: sends messages and emits typing start/stop over Socket.IO.
+ *
+ * @param conversationId - Thread key (visitor id for admin replies; visitor’s own id in widget).
+ */
 export function MessageInput({ conversationId }: MessageInputProps) {
   const [message, setMessage] = useState('');
   const { sendMessage, user } = useChatStore();
@@ -17,6 +22,7 @@ export function MessageInput({ conversationId }: MessageInputProps) {
   const typingStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
 
+  /** Cancel pending idle timer and emit `typing_stop` if a burst was in flight. */
   const emitTypingStop = useCallback(() => {
     if (typingStopTimerRef.current) {
       clearTimeout(typingStopTimerRef.current);
@@ -30,6 +36,7 @@ export function MessageInput({ conversationId }: MessageInputProps) {
 
   useEffect(() => () => emitTypingStop(), [emitTypingStop]);
 
+  /** (Re)arm the idle window after which `typing_stop` is emitted automatically. */
   const scheduleTypingStop = useCallback(() => {
     if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
     typingStopTimerRef.current = setTimeout(() => {
@@ -38,6 +45,7 @@ export function MessageInput({ conversationId }: MessageInputProps) {
     }, TYPING_IDLE_MS);
   }, [emitTypingStop]);
 
+  /** Validate, send the trimmed message, reset local state, and end typing. */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || !user) return;
@@ -55,7 +63,7 @@ export function MessageInput({ conversationId }: MessageInputProps) {
     inputRef.current?.focus();
   };
 
-  // Handle Enter key for sending
+  /** Submit on Enter while ignoring Shift+Enter (reserved for future multiline). */
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -63,6 +71,7 @@ export function MessageInput({ conversationId }: MessageInputProps) {
     }
   };
 
+  /** Keep local text in sync and drive debounced typing start/stop emissions. */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setMessage(value);

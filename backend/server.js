@@ -1,3 +1,9 @@
+/**
+ * Chat support Socket.IO + Express entrypoint.
+ *
+ * Starts an HTTP server with CORS allowlisting, mounts minimal REST routes,
+ * and attaches Socket.IO for real-time messaging and presence.
+ */
 import express from 'express';
 import http from 'http';
 import cors from 'cors';

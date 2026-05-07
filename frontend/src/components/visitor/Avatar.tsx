@@ -11,7 +11,9 @@ const sizeClasses = {
   lg: 'w-12 h-12 text-base',
 };
 
+/** Circular avatar using remote image URL or generated initials fallback. */
 export function Avatar({ user, size = 'md' }: AvatarProps) {
+  /** Derive up to two-letter initials from a display name for fallback avatars. */
   const getInitials = (name: string) => {
     return name
       .split(' ')

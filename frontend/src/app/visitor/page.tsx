@@ -6,6 +6,7 @@ import { ChatWidget } from '@/components/visitor/ChatWidget';
 import { DarkModeToggle } from '@/components/shared/DarkModeToggle';
 import { Status, UserRole } from '@/types';
 
+/** Demo marketing page plus floating chat widget for the visitor role. */
 export default function VisitorPage() {
   const { user, setUser } = useChatStore();
 
