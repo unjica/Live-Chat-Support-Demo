@@ -66,6 +66,7 @@ Backend workspace scripts load `backend/.env`. Frontend loads `frontend/.env.loc
 | `OPERATOR_SECRET` | Required 32+ characters; server only, entered at login. Rotate and restart to end existing sessions. |
 | `FRONTEND_URL` | Exact allowed origins, comma-separated; development default http://localhost:3000, required in production. Non-browser clients may omit Origin but still authenticate. |
 | `PORT` / `HOST` | Backend 3001 / 0.0.0.0. |
+| `TRUST_PROXY_HOPS` | Number of trusted reverse proxies in front of the backend (0–10), default 0 = use the socket peer address and ignore `X-Forwarded-For`. Set 1 on Railway (one edge proxy) or behind a single nginx/Caddy that appends `X-Forwarded-For`. Never set it higher than the real number of proxies, otherwise clients can spoof their IP and bypass the per-IP connection limit. |
 | `NEXT_PUBLIC_API_URL` | Browser backend origin, default http://localhost:3001; embedded at build time. |
 | `POSTGRES_PASSWORD` | Compose DB password; local example only. Use URL-safe hex before hosting. |
 | `BIND_ADDRESS` | Compose published app interface, default 127.0.0.1. |
