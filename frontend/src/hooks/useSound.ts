@@ -41,7 +41,7 @@ export function useSound() {
     try {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => {});
-    } catch (error) {
+    } catch {
       // Silently handle any errors
     }
   }, [hasInteracted]);

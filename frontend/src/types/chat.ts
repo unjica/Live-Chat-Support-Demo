@@ -1,6 +1,7 @@
 import { Status } from '@/types';
 
 export type Message = {
+  sequence?: number;
   id: string;
   conversationId: string;
   senderId: string;

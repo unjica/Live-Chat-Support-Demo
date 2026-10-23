@@ -7,7 +7,11 @@
     "backend"
   ],
   "scripts": {
-    "dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && npm run start\""
+    "dev": "concurrently \"npm run dev -w frontend\" \"npm run dev -w backend\"",
+    "lint": "npm run lint --workspaces",
+    "typecheck": "npm run typecheck --workspaces",
+    "build": "npm run build --workspaces",
+    "test": "npm test -w backend"
   },
   "dependencies": {
     "concurrently": "^9.1.2"
