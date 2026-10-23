@@ -6,14 +6,46 @@ Create your own project with [Use this template](https://github.com/unjica/Live-
 
 **Upgrading from the Express version? Read [MIGRATION.md](MIGRATION.md).** PostgreSQL and operator authentication are now required; the socket payloads changed.
 
-## Quick start
+## Docker quick start
+
+Requires Docker Engine/Desktop with Docker Compose v2+ (including `--wait`). No host Node.js or PostgreSQL installation is needed.
+
+```sh
+cp .env.example .env
+# Set OPERATOR_SECRET in .env to the output of: openssl rand -hex 32
+docker compose up --build -d --wait
+```
+
+Open http://localhost:3000/visitor and http://localhost:3000/admin. Log in as operator using `OPERATOR_SECRET` from `.env`. Use separate browser profiles for independent visitors. The backend health endpoint is http://localhost:3001/; frontend health uses `/`. PostgreSQL is private to the Compose network. All application containers run as a non-root user; the one-shot migration service must succeed before the backend starts. Missing/short/example operator secrets fail startup in production.
+
+`docker compose up` starts the same stack after initial configuration/build. `docker compose logs -f` shows logs; `docker compose down` stops/removes containers and keeps the named database volume. **`docker compose down -v` permanently deletes local chat data.** Do not run it against data you need.
+
+`NEXT_PUBLIC_API_URL` is a browser-reachable URL, never the internal `backend` service name. It is a Docker build argument embedded into JavaScript; changing it requires `docker compose up --build -d`. Set `FRONTEND_URL` to the exact frontend browser origin (including scheme/port). Change both URLs if changing public ports/domains. Root `.env` configures Compose; native workspace env files are excluded from images.
+
+### Self-hosting
+
+Use one backend replica. Set a random operator secret and URL-safe database password before first startup. Keep `.env` private. A password change on an existing PostgreSQL volume requires changing the database role password too; environment variables do not reset existing credentials.
+
+Place a TLS reverse proxy (Caddy/nginx/Traefik) in front of both origins, use HTTPS for `NEXT_PUBLIC_API_URL` and `FRONTEND_URL`, and rebuild. For nginx, forward `/socket.io/` to backend port 3001 with HTTP/1.1, `Upgrade $http_upgrade`, `Connection "upgrade"`, `Host $host`, and a sufficiently long `proxy_read_timeout` (e.g. 120s). Forward normal frontend requests to port 3000. Configure edge connection/rate limits. Loopback port binding works with a host proxy; for a container proxy, attach it to the Compose network and route directly to services, or explicitly choose `BIND_ADDRESS` with appropriate firewall rules. Do not expose PostgreSQL.
+
+Back up regularly, copy backups off-host and test restoration:
+
+```sh
+docker compose exec -T postgres pg_dump -U chat -d chat -Fc > chat.dump
+# Restore only into an intended empty database:
+# docker compose exec -T postgres pg_restore -U chat -d chat < chat.dump
+```
+
+To update, back up first, pull reviewed source changes, then run `docker compose up --build -d --wait`. Migrations run before backend startup; review schema changes and recovery plans before updating a live instance. Existing dependency/security limits still apply. See [hosting options and pricing sources](docs/hosting.md).
+
+## Native development quick start
 
 Requires Node.js 22+ (CI uses 22), npm and Docker Compose or PostgreSQL 16.
 
 ```sh
 npm ci
 npm run prisma:generate -w backend
-docker compose up -d postgres
+docker compose -f compose.dev.yaml up -d postgres
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env.local
 # Set OPERATOR_SECRET in backend/.env to a random secret of at least 32 characters.
@@ -22,7 +54,7 @@ npm run db:migrate -w backend
 npm run dev
 ```
 
-Open http://localhost:3000/visitor and http://localhost:3000/admin. Enter the backend operator secret in the operator login form. Use separate browser profiles for independent visitors; duplicated tabs can inherit sessionStorage. `npm run dev` starts both workspaces. Compose starts only PostgreSQL, bound to loopback with a persistent volume; its example credentials are for local development.
+Open http://localhost:3000/visitor and http://localhost:3000/admin. Enter the backend operator secret in the operator login form. Use separate browser profiles for independent visitors; duplicated tabs can inherit sessionStorage. `npm run dev` starts both workspaces. The explicit `compose.dev.yaml` file starts only PostgreSQL, bound to loopback with a persistent volume; its example credentials are for local development.
 
 ## Configuration
 

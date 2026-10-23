@@ -4,7 +4,7 @@ Noben projekt Vercel/Railway ni bil ustvarjen ali objavljen. Ni bilo dostopa do 
 
 ## Lokalno
 
-Iz korena izvedite `npm ci`, `npm run prisma:generate -w backend` in `docker compose up -d postgres`. Kopirajte `backend/.env.example` v `backend/.env` in nastavite naključno skrivnost. Kopirajte `frontend/.env.example` v `frontend/.env.local`. Počakajte na zdrav PostgreSQL, nato izvedite `npm run db:migrate -w backend` in `npm run dev`. Frontend uporablja vrata 3000, backend 3001. Compose geslo je samo za lokalni razvoj na loopback naslovu.
+Iz korena izvedite `npm ci`, `npm run prisma:generate -w backend` in `docker compose -f compose.dev.yaml up -d postgres`. Kopirajte `backend/.env.example` v `backend/.env` in nastavite naključno skrivnost. Kopirajte `frontend/.env.example` v `frontend/.env.local`. Počakajte na zdrav PostgreSQL, nato izvedite `npm run db:migrate -w backend` in `npm run dev`. Frontend uporablja vrata 3000, backend 3001. Compose geslo je samo za lokalni razvoj na loopback naslovu.
 
 ## Vercel frontend
 
@@ -29,3 +29,7 @@ Strežniške spremenljivke (vse so prikazane v `backend/.env.example`):
 Po poznejši objavi preverite TLS/WebSocket upgrade, healthcheck, napačen Origin, napačno skrivnost, dva ločena obiskovalca in reconnect. Migracije izvajajte nad namensko bazo; pred spremembo obstoječe baze zagotovite varnostno kopijo. Pred javnim zagonom razrešite omejitve v gap-analysis.md in preostale audit ugotovitve.
 
 Nastavitve sledijo [Railway config reference](https://docs.railway.com/config-as-code/reference), [pre-deploy navodilom](https://docs.railway.com/deployments/pre-deploy-command) in [Vercel monorepo navodilom](https://vercel.com/docs/monorepos/monorepo-faq). Lokalno sta bila preverjena produkcijski build in start obeh procesov, ne oddaljena infrastruktura.
+
+## Polni Docker sklad (P3)
+
+Za frontend, backend in PostgreSQL uporabite korenski `.env.example` ter `docker compose up --build -d --wait`. Navodila, migracijska storitev, trajni volumen, TLS, varnostne kopije in posodobitve so opisani v [README](../../README.md#docker-quick-start). Primerjava gostovanja je v [hosting.md](../hosting.md). Vrata baze privzeto niso objavljena.
