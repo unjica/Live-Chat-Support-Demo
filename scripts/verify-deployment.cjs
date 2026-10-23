@@ -15,6 +15,12 @@ if (!site || !api || !secretFile) {
   console.error('Set SITE_URL, API_URL and OPERATOR_SECRET_FILE');
   process.exit(2);
 }
+for (const [name, u] of [['SITE_URL', site], ['API_URL', api]]) {
+  if (new URL(u).protocol !== 'https:') {
+    console.error(`${name} must use https://`);
+    process.exit(2);
+  }
+}
 const secret = fs.readFileSync(secretFile, 'utf8').trim();
 const origin = new URL(site).origin;
 const results = [];
@@ -23,6 +29,7 @@ const check = (name, pass, detail = '') => {
   console.log(`${pass ? 'PASS' : 'FAIL'} ${name}${detail ? ` (${detail})` : ''}`);
 };
 const sockets = [];
+const get = (u, opts = {}) => fetch(u, { ...opts, signal: AbortSignal.timeout(15000) });
 const ack = (s, ev, data) => s.timeout(8000).emitWithAck(ev, data).catch((e) => ({ ok: false, error: e.message }));
 const wait = (s, pred, ms = 8000) =>
   new Promise((resolve) => {
@@ -45,6 +52,7 @@ function cert(host) {
       resolve({ ok: sock.authorized, until: c.valid_to, issuer: c.issuer && c.issuer.O });
       sock.end();
     });
+    sock.setTimeout(10000, () => { sock.destroy(); resolve({ ok: false, until: 'TLS timeout' }); });
     sock.on('error', (e) => resolve({ ok: false, until: e.message }));
   });
 }
@@ -56,18 +64,18 @@ function cert(host) {
   }
   const pages = {};
   for (const p of ['/', '/visitor', '/admin']) {
-    const r = await fetch(site + p, { redirect: 'manual' });
+    const r = await get(site + p, { redirect: 'manual' });
     pages[p] = await r.text();
     check(`page ${p}`, r.status === 200, `HTTP ${r.status}${r.headers.get('x-robots-tag') ? `, x-robots-tag: ${r.headers.get('x-robots-tag')}` : ''}`);
   }
   const scripts = [...new Set(Object.values(pages).join('').match(/\/_next\/static\/[^"']+\.js/g) || [])];
   let bundle = '';
-  for (const s of scripts) bundle += await (await fetch(site + s)).text();
+  for (const s of scripts) bundle += await (await get(site + s)).text();
   check('bundle loaded', scripts.length > 0, `${scripts.length} files`);
   check('bundle points to API_URL', bundle.includes(api));
   check('bundle has no server secrets',
     !bundle.includes(secret) && !/postgres(ql)?:\/\/|OPERATOR_SECRET|DATABASE_URL/.test(bundle));
-  check('api health', (await fetch(api)).status === 200);
+  check('api health', (await get(api)).status === 200);
 
   const bad = await connect('https://evil.example').then(() => false, () => true);
   check('foreign origin rejected', bad);
