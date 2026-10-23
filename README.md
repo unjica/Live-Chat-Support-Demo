@@ -69,6 +69,7 @@ Backend workspace scripts load `backend/.env`. Frontend loads `frontend/.env.loc
 | `CLIENT_IP_HEADER` | Optional single-value client IP header set by a trusted edge, default empty (disabled). On Railway set `x-real-ip`: the Railway edge overwrites `X-Real-IP` and `X-Forwarded-For` on every public request, and its `X-Forwarded-For` may contain an extra internal hop, so hop counting is unreliable there. Requests over Railway private networking bypass the edge, so only enable this when no untrusted service can reach the backend privately. Invalid values fall back to `TRUST_PROXY_HOPS`/socket peer. |
 | `TRUST_PROXY_HOPS` | Number of trusted reverse proxies in front of the backend (0–10), default 0 = use the socket peer address and ignore `X-Forwarded-For`. Set 1 behind a single nginx/Caddy that appends `X-Forwarded-For`. Never set it higher than the real number of proxies, otherwise clients can spoof their IP and bypass the per-IP connection limit. |
 | `NEXT_PUBLIC_API_URL` | Browser backend origin, default http://localhost:3001; embedded at build time. |
+| `NEXT_PUBLIC_SITE_URL` | Optional public frontend origin (e.g. https://chat.tacko.io) used as `metadataBase` for absolute OG/Twitter image URLs; embedded at build time. |
 | `POSTGRES_PASSWORD` | Compose DB password; local example only. Use URL-safe hex before hosting. |
 | `BIND_ADDRESS` | Compose published app interface, default 127.0.0.1. |
 | `FRONTEND_PORT` / `BACKEND_PORT` | Compose published app ports, default 3000 / 3001; also update browser URLs when changing. |

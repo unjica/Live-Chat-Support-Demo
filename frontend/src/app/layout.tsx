@@ -9,7 +9,11 @@ import ErrorToastWrapper from '@/components/ErrorToast';
 
 const inter = Inter({ subsets: ["latin"] });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+
 export const metadata: Metadata = {
+  // Absolute base for OG/Twitter images, e.g. https://chat.tacko.io. Optional.
+  ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
   title: "Live Chat Support",
   description: "Real-time chat support system for visitors and agents",
   icons: {
@@ -42,18 +46,18 @@ export const metadata: Metadata = {
     description: "Real-time chat support system for visitors and agents",
     images: [
       {
-        url: "/logo.jpg",
-        width: 1200,
-        height: 630,
+        url: "/logo.png",
+        width: 1024,
+        height: 1024,
         alt: "Live Chat Support Preview",
       },
     ],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     title: "Live Chat Support",
     description: "Real-time chat support system for visitors and agents",
-    images: ["/logo.jpg"],
+    images: ["/logo.png"],
   },
 };
 
