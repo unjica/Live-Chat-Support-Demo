@@ -24,6 +24,8 @@ jobs:
       NEXT_PUBLIC_API_URL: http://127.0.0.1:43101
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -44,6 +46,8 @@ jobs:
       OPERATOR_SECRET: ci-compose-only-secret-at-least-32-characters
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
