@@ -1,0 +1,10 @@
+**/node_modules
+**/.next
+**/dist
+**/.env*
+.git
+test-results
+playwright-report
+**/coverage
+*.log
+FINAL_REPORT.md

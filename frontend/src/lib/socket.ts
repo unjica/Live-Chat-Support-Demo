@@ -1,98 +1,216 @@
-/**
- * Socket.IO client bootstrap, global error surface, and chat event wiring.
- */
-import { io, Socket } from 'socket.io-client';
-import { useChatStore } from '@/store/chatStore';
-import { create } from 'zustand';
-
-interface ErrorState {
+import { io, Socket } from "socket.io-client";
+import { create } from "zustand";
+import { useChatStore } from "@/store/chatStore";
+import { Message, UserRole } from "@/types";
+export const useErrorStore = create<{
   error: string | null;
   setError: (error: string | null) => void;
-}
-
-/** Zustand store for transient chat connection / server errors shown in a toast. */
-export const useErrorStore = create<ErrorState>((set) => ({
-  error: null,
-  /** Replace the visible error string, or pass `null` to dismiss the toast. */
-  setError: (error) => set({ error }),
-}));
-
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
+}>((set) => ({ error: null, setError: (error) => set({ error }) }));
+export const useConnectionStore = create<{
+  status: string;
+  ready: boolean;
+  conversationId: string | null;
+}>(() => ({ status: "Not connected", ready: false, conversationId: null }));
 let socket: Socket;
-
-/**
- * Create the singleton Socket.IO client (if needed), register listeners, and return it.
- *
- * @returns {Socket} Shared client instance connected to `NEXT_PUBLIC_API_URL`.
- */
-export const initializeSocket = () => {
-  if (!socket) {
-    socket = io(SOCKET_URL, {
-      path: '/socket.io/',
-      transports: ['polling', 'websocket'],
-      withCredentials: false,
-      reconnectionDelay: 1000,
-      reconnection: true,
-      reconnectionAttempts: 10
-    });
-
-    /** Surface transport-level failures (e.g. wrong API URL or offline client). */
-    socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error.message);
-      const errorMessage = error.message === 'xhr poll error'
-        ? 'Unable to connect to chat server. Please check your internet connection.'
-        : `Chat server connection error: ${error.message}`;
-      useErrorStore.getState().setError(errorMessage);
-    });
-
-    /** Generic Socket.IO protocol errors from the server. */
-    socket.on('error', (error) => {
-      console.error('Socket error:', error);
-      useErrorStore.getState().setError('An error occurred with the chat connection.');
-    });
-
-    /** Map disconnect reasons to user-visible hints and opportunistic reconnect. */
-    socket.on('disconnect', (reason) => {
-      if (reason === 'io server disconnect') {
-        useErrorStore.getState().setError('Disconnected from chat server. Trying to reconnect...');
-        socket.connect();
-      } else if (reason === 'transport close') {
-        useErrorStore.getState().setError('Lost connection to chat server. Check your internet connection.');
-      }
-    });
-
-    /** Fan-in path for chat payloads broadcast by the backend. */
-    socket.on('receive_message', (message) => {
-      useChatStore.getState().receiveMessage(message);
-    });
-
-    /** Mark a remote peer as actively typing in the shared Zustand store. */
-    socket.on('user_typing', (payload: { id: string }) => {
-      if (payload?.id) useChatStore.getState().setTypingUser(payload.id, true);
-    });
-
-    /** Clear typing state for a remote peer after idle or explicit stop. */
-    socket.on('user_stopped_typing', (payload: { id: string }) => {
-      if (payload?.id) useChatStore.getState().setTypingUser(payload.id, false);
-    });
-  }
-  return socket;
+let generation = 0;
+let credentials: {
+  role: "visitor" | "admin";
+  token?: string;
+  secret?: string;
+} | null = null;
+type Reply = {
+  ok: boolean;
+  error?: string;
+  code?: string;
+  identity?: { id: string; role: "visitor" | "admin"; conversationId?: string };
+  token?: string;
+  history?: Message[];
+  conversations?: { id: string }[];
+  online?: string[];
+  message?: Message;
 };
-
-/**
- * Return the live Socket.IO client, initializing it on first access.
- */
-export const getSocket = (): Socket => {
-  if (!socket) {
-    return initializeSocket();
+async function request(event: string, payload: unknown): Promise<Reply> {
+  try {
+    return await getSocket().timeout(10000).emitWithAck(event, payload);
+  } catch {
+    return { ok: false, error: "Server did not respond. Please retry." };
   }
+}
+async function join() {
+  if (!credentials) return;
+  const currentGeneration = generation;
+  useConnectionStore.setState({
+    status: "Restoring conversation…",
+    ready: false,
+  });
+  let reply = await request("user_join", credentials);
+  if (generation !== currentGeneration) return;
+  if (
+    !reply.ok &&
+    reply.code === "UNAUTHORIZED" &&
+    credentials?.role === "visitor" &&
+    credentials.token
+  ) {
+    sessionStorage.removeItem("chat-token");
+    credentials = { role: "visitor" };
+    pending = null;
+    useChatStore.getState().clearChat();
+    useChatStore.setState({ user: null, selectedVisitorId: null });
+    useConnectionStore.setState({ conversationId: null });
+    reply = await request("user_join", credentials);
+  }
+  if (generation !== currentGeneration) return;
+  if (!reply.ok || !reply.identity) {
+    useConnectionStore.setState({
+      status: "Could not join. Retry login or reconnect.",
+      ready: false,
+    });
+    useErrorStore.getState().setError(reply.error || "Authentication failed");
+    return;
+  }
+  if (reply.token) {
+    sessionStorage.setItem("chat-token", reply.token);
+    credentials.token = reply.token;
+  }
+  const state = useChatStore.getState();
+  state.setUser({
+    id: reply.identity.id,
+    name: reply.identity.role === "admin" ? "Operator" : "Visitor",
+    role: reply.identity.role === "admin" ? UserRole.ADMIN : UserRole.VISITOR,
+  });
+  // Merge by server id to retain events received while history was being fetched.
+  useChatStore.setState((s) => ({
+    conversations: {
+      ...Object.fromEntries((reply.conversations || []).map((c) => [c.id, []])),
+      ...s.conversations,
+    },
+  }));
+  reply.history?.forEach(state.receiveMessage);
+  state.setOnlineVisitors(reply.online || []);
+  useConnectionStore.setState({
+    status: "Connected",
+    ready: true,
+    conversationId: reply.identity.conversationId || null,
+  });
+  useErrorStore.getState().setError(null);
+  if (state.selectedVisitorId)
+    await selectConversation(state.selectedVisitorId);
+}
+export function initializeSocket() {
+  if (socket) return socket;
+  socket = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001", {
+    autoConnect: false,
+    reconnection: true,
+  });
+  socket.on("connect", () => void join());
+  socket.on("disconnect", (reason) => {
+    generation++;
+    useConnectionStore.setState({
+      status: "Disconnected. Reconnecting…",
+      ready: false,
+    });
+    useChatStore.setState({ typingUserIds: new Set() });
+    // Server-enforced credential expiry requires a fresh authenticated join.
+    if (reason === "io server disconnect" && credentials) socket.connect();
+  });
+  socket.on("connect_error", () =>
+    useConnectionStore.setState({
+      status: "Connection failed. Retrying…",
+      ready: false,
+    }),
+  );
+  socket.on("error", (error: string) =>
+    useErrorStore.getState().setError(error),
+  );
+  socket.on("receive_message", (m: Message) =>
+    useChatStore.getState().receiveMessage(m),
+  );
+  socket.on("conversations", (list: { id: string }[]) =>
+    useChatStore.setState((s) => ({
+      conversations: {
+        ...Object.fromEntries(list.map((c) => [c.id, []])),
+        ...s.conversations,
+      },
+    })),
+  );
+  socket.on("visitors_online", (ids: string[]) =>
+    useChatStore.getState().setOnlineVisitors(ids),
+  );
+  for (const [event, typing] of [
+    ["user_typing", true],
+    ["user_stopped_typing", false],
+  ] as const)
+    socket.on(event, (p: { id: string; conversationId: string }) => {
+      const s = useChatStore.getState();
+      if (s.role !== UserRole.ADMIN || s.selectedVisitorId === p.conversationId)
+        s.setTypingUser(
+          s.role === UserRole.ADMIN ? p.conversationId : p.id,
+          typing,
+        );
+    });
   return socket;
-};
-
-/** Disconnect the singleton client (e.g. on full sign-out or teardown). */
-export const disconnectSocket = () => {
-  if (socket) {
-    socket.disconnect();
+}
+export const getSocket = () => initializeSocket();
+export function connectChat(role: "visitor" | "admin", secret?: string) {
+  generation++;
+  pending = null;
+  const s = getSocket();
+  s.disconnect();
+  useChatStore.getState().clearChat();
+  useChatStore.setState({ user: null, selectedVisitorId: null });
+  credentials =
+    role === "visitor"
+      ? { role, token: sessionStorage.getItem("chat-token") || undefined }
+      : { role, secret };
+  useConnectionStore.setState({
+    status: "Connecting…",
+    ready: false,
+    conversationId: null,
+  });
+  s.connect();
+}
+export function disconnectSocket() {
+  generation++;
+  pending = null;
+  credentials = null;
+  socket?.disconnect();
+  useConnectionStore.setState({
+    status: "Not connected",
+    ready: false,
+    conversationId: null,
+  });
+  useChatStore.getState().clearChat();
+  useChatStore.setState({ user: null });
+}
+export async function selectConversation(id: string) {
+  const currentGeneration = generation;
+  useChatStore.getState().setSelectedVisitorId(id);
+  const reply = await request("select_conversation", { conversationId: id });
+  if (currentGeneration !== generation) return;
+  if (reply.ok) reply.history?.forEach(useChatStore.getState().receiveMessage);
+  else
+    useErrorStore.getState().setError(reply.error || "Could not load history");
+}
+// Keep the same client id for an unacknowledged retry, including after reconnect.
+let pending: { key: string; id: string } | null = null;
+export async function sendChatMessage(m: Omit<Message, "id" | "timestamp">) {
+  if (!useConnectionStore.getState().ready) return false;
+  const currentGeneration = generation;
+  const key = JSON.stringify([m.conversationId, m.content]);
+  if (pending?.key !== key) pending = { key, id: crypto.randomUUID() };
+  const reply = await request("send_message", {
+    conversationId: m.conversationId,
+    content: m.content,
+    clientMessageId: pending.id,
+  });
+  if (currentGeneration !== generation) return false;
+  if (!reply.ok) {
+    useErrorStore
+      .getState()
+      .setError(reply.error || "Message failed. Retry sending.");
+    return false;
   }
-}; 
+  pending = null;
+  if (reply.message) useChatStore.getState().receiveMessage(reply.message);
+  return true;
+}

@@ -1,0 +1,61 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: chat
+          POSTGRES_PASSWORD: chat
+          POSTGRES_DB: chat_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U chat -d chat_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://chat:chat@127.0.0.1:5432/chat_test
+      OPERATOR_SECRET: ci-only-operator-secret-at-least-32-characters
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:43101
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run prisma:generate -w backend
+      - run: npm run db:migrate -w backend
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+
+  compose-smoke:
+    runs-on: ubuntu-latest
+    env:
+      OPERATOR_SECRET: ci-compose-only-secret-at-least-32-characters
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: docker compose up --build -d --wait --wait-timeout 240
+      - run: node scripts/compose-smoke.cjs
+      - if: failure()
+        run: docker compose logs --no-color
+      - if: always()
+        run: docker compose down -v

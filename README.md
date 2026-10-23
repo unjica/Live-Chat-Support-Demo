@@ -1,237 +1,124 @@
-![License](https://img.shields.io/github/license/unjica/Live-Chat-Support-Demo)
-![Last Commit](https://img.shields.io/github/last-commit/unjica/Live-Chat-Support-Demo)
-![Issues](https://img.shields.io/github/issues/unjica/Live-Chat-Support-Demo)
-![Stars](https://img.shields.io/github/stars/unjica/Live-Chat-Support-Demo?style=social)
+# Live Chat Support Demo
 
-![Built with Next.js](https://img.shields.io/badge/Built%20with-Next.js-black)
-![Socket.IO](https://img.shields.io/badge/Realtime-Socket.IO-010101?logo=socket.io)
+An MIT-licensed live support starter with a Next.js/React visitor widget and operator inbox, a NestJS/Socket.IO backend, and PostgreSQL persistence through Prisma. Conversations are isolated on the server, visitor credentials are hashed in storage, and message IDs make retries idempotent. Reconnect restores history without refreshing the page.
 
-# 💬 Live Chat Support Demo
+Create your own project with [Use this template](https://github.com/unjica/Live-Chat-Support-Demo/generate). The original starter was [featured on Dev.to](https://dev.to/unjica/live-chat-support-starter-kit-open-source-79h).
 
-> This repo is a **template** — click [Use this template](https://github.com/unjica/Live-Chat-Support-Demo/generate) to create your own real-time chat support app instantly!
+**Upgrading from the Express version? Read [MIGRATION.md](MIGRATION.md).** PostgreSQL and operator authentication are now required; the socket payloads changed.
 
-A real-time support chat app built with **Next.js (App Router)**, **Socket.IO**, **Zustand**, and **Tailwind CSS**. Visitors can instantly chat with an admin, while both sides see messages update in real time. All chats are locally persisted per role.
+## Docker quick start
 
-> Featured on Dev.to 🚀 [Live Chat Support Starter Kit — Open Source!](https://dev.to/unjica/live-chat-support-starter-kit-open-source-79h)
+Requires Docker Engine/Desktop with Docker Compose v2+ (including `--wait`). No host Node.js or PostgreSQL installation is needed.
 
----
-
-## ✨ Features
-
-- ✅ Real-time chat with Socket.IO  
-- ⌨️ Typing indicators (visitor ↔ admin)  
-- 🧑‍💻 Separate interfaces for **visitor** and **admin**  
-- 🧠 Role-based persistence:
-  - Visitor chats → `sessionStorage`
-  - Admin chats → `localStorage`
-- 💻 Deployed on Vercel (frontend) + Railway (Socket.IO backend)
-- 💅 Styled with Tailwind CSS
-
----
-
-## 📁 Project Structure
-
-```
-.
-├── frontend/           → Next.js frontend application
-│   ├── src/
-│   │   ├── app/       → Admin & visitor views
-│   │   ├── components → Shared components
-│   │   ├── store/     → Zustand state
-│   │   ├── lib/       → Socket.IO client
-│   │   ├── types/     → Type definitions
-│   │   ├── config/    → Configuration files
-│   │   └── styles/    → Tailwind styles
-│   ├── public/        → Static assets
-│   ├── package.json   → Frontend dependencies
-│   └── [config files] → Next.js, TypeScript, etc.
-└── backend/           → Socket.IO server
-    ├── server.js      → Main server entry point
-    ├── controllers/   → Socket.IO event handlers
-    ├── services/      → Business logic
-    ├── routes/        → HTTP routes (if needed)
-    ├── utils/         → Utility functions
-    └── package.json   → Backend dependencies
+```sh
+cp .env.example .env
+# Set OPERATOR_SECRET in .env to the output of: openssl rand -hex 32
+docker compose up --build -d --wait
 ```
 
----
+Open http://localhost:3000/visitor and http://localhost:3000/admin. Log in as operator using `OPERATOR_SECRET` from `.env`. Use separate browser profiles for independent visitors. The backend health endpoint is http://localhost:3001/; frontend health uses `/`. PostgreSQL is private to the Compose network. All application containers run as a non-root user; the one-shot migration service must succeed before the backend starts. Missing/short/example operator secrets fail startup in production.
 
-## ⚙️ Configuration
+`docker compose up` starts the same stack after initial configuration/build. `docker compose logs -f` shows logs; `docker compose down` stops/removes containers and keeps the named database volume. **`docker compose down -v` permanently deletes local chat data.** Do not run it against data you need.
 
-The application uses a centralized configuration system located in `frontend/src/config/`:
+`NEXT_PUBLIC_API_URL` is a browser-reachable URL, never the internal `backend` service name. It is a Docker build argument embedded into JavaScript; changing it requires `docker compose up --build -d`. Set `FRONTEND_URL` to the exact frontend browser origin (including scheme/port). Change both URLs if changing public ports/domains. Root `.env` configures Compose; native workspace env files are excluded from images.
 
-### Chat Configuration (`chat.ts`)
-```typescript
-export const chatConfig = {
-  welcomeMessage: 'Hi 👋 How can we help you?',  // Initial greeting message
-  defaultAgentName: 'Support Team',  // Default name for support agents
-};
+### Self-hosting
+
+Use one backend replica. Set a random operator secret and URL-safe database password before first startup. Keep `.env` private. A password change on an existing PostgreSQL volume requires changing the database role password too; environment variables do not reset existing credentials.
+
+Place a TLS reverse proxy (Caddy/nginx/Traefik) in front of both origins, use HTTPS for `NEXT_PUBLIC_API_URL` and `FRONTEND_URL`, and rebuild. For nginx, forward `/socket.io/` to backend port 3001 with HTTP/1.1, `Upgrade $http_upgrade`, `Connection "upgrade"`, `Host $host`, and a sufficiently long `proxy_read_timeout` (e.g. 120s). Forward normal frontend requests to port 3000. Configure edge connection/rate limits. Loopback port binding works with a host proxy; for a container proxy, attach it to the Compose network and route directly to services, or explicitly choose `BIND_ADDRESS` with appropriate firewall rules. Do not expose PostgreSQL.
+
+Back up regularly, copy backups off-host and test restoration:
+
+```sh
+docker compose exec -T postgres pg_dump -U chat -d chat -Fc > chat.dump
+# Restore only into an intended empty database:
+# docker compose exec -T postgres pg_restore -U chat -d chat < chat.dump
 ```
 
-To modify the chat appearance or behavior:
-1. Update the values in `chatConfig`
-2. The changes will automatically reflect across all components using these settings
+To update, back up first, pull reviewed source changes, then run `docker compose up --build -d --wait`. Migrations run before backend startup; review schema changes and recovery plans before updating a live instance. Existing dependency/security limits still apply. See [hosting options and pricing sources](docs/hosting.md).
 
-### Environment Configuration
-- Frontend: `.env.local`
-  ```
-  NEXT_PUBLIC_API_URL=http://localhost:3001
-  ```
-- Backend: `.env`
-  ```
-  FRONTEND_URL=http://localhost:3000
-  FRONTEND_URL_2=https://staging.your-app.com    # Optional: Additional frontend URL
-  FRONTEND_URL_3=https://dev.your-app.com        # Optional: Additional frontend URL
-  PORT=3001
-  ```
+## Native development quick start
 
-  > 💡 **Multiple Frontend URLs**: You can configure multiple frontend URLs by setting additional environment variables (`FRONTEND_URL_2`, `FRONTEND_URL_3`, etc.). This is useful when you have multiple environments (staging, development, etc.) that need to connect to the same backend. The backend will automatically handle CORS for all configured URLs.
+Requires Node.js 22+ (CI uses 22), npm and Docker Compose or PostgreSQL 16. Ports 3000, 3001 and 5432 must be free for these defaults; if PostgreSQL is already installed, use a dedicated local database and update `DATABASE_URL` instead of starting Compose.
 
----
-
-## 🧠 State Management
-
-The application uses Zustand for state management with the following key stores:
-
-### Chat Store (`store/chatStore.ts`)
-```typescript
-interface ChatState {
-  messages: Message[];
-  user: User | null;
-  conversations: Record<string, Message[]>;
-  onlineVisitors: Set<string>;
-  isChatFocused: boolean;
-  selectedVisitorId: string | null;
-  role: UserRole | null;
-  // ... actions
-}
+```sh
+npm ci
+npm run prisma:generate -w backend
+docker compose -f compose.dev.yaml up -d --wait postgres
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env.local
+# Set OPERATOR_SECRET in backend/.env to a random secret of at least 32 characters.
+# Generate one with: openssl rand -hex 32
+npm run db:migrate -w backend
+npm run dev
 ```
 
-Key features:
-- Role-based persistence (admin/visitor)
-- Real-time message synchronization
-- Online status tracking
-- Conversation management
+Open http://localhost:3000/visitor and http://localhost:3000/admin. Enter the backend operator secret in the operator login form. Use separate browser profiles for independent visitors; duplicated tabs can inherit sessionStorage. `npm run dev` starts both workspaces. If a restricted environment reports Watchpack `EMFILE`, use `WATCHPACK_POLLING=true npm run dev`. The explicit `compose.dev.yaml` file starts only PostgreSQL, bound to loopback with a persistent volume; its example credentials are for local development.
 
-### Usage Example
-```typescript
-const { messages, user, sendMessage } = useChatStore();
+## Configuration
 
-// Send a message
-sendMessage({
-  conversationId: '123',
-  senderId: user.id,
-  content: 'Hello!'
-});
+Backend workspace scripts load `backend/.env`. Frontend loads `frontend/.env.local`.
+
+| Variable | Native default / purpose |
+| --- | --- |
+| `DATABASE_URL` | Required PostgreSQL URL; example uses localhost:5432/chat. Use a separate test database. |
+| `OPERATOR_SECRET` | Required 32+ characters; server only, entered at login. Rotate and restart to end existing sessions. |
+| `FRONTEND_URL` | Exact allowed origins, comma-separated; development default http://localhost:3000, required in production. Non-browser clients may omit Origin but still authenticate. |
+| `PORT` / `HOST` | Backend 3001 / 0.0.0.0. |
+| `NEXT_PUBLIC_API_URL` | Browser backend origin, default http://localhost:3001; embedded at build time. |
+| `POSTGRES_PASSWORD` | Compose DB password; local example only. Use URL-safe hex before hosting. |
+| `BIND_ADDRESS` | Compose published app interface, default 127.0.0.1. |
+| `FRONTEND_PORT` / `BACKEND_PORT` | Compose published app ports, default 3000 / 3001; also update browser URLs when changing. |
+
+Visitor bearer tokens live in sessionStorage and expire 30 days after conversation creation. Expired tokens start a new conversation; old history stays in the database and is not automatically deleted. Use HTTPS/WSS outside localhost. Never commit `.env` files or log credentials.
+
+The UI includes typing indicators, connection status, unread notifications and dark mode. Customize the greeting and agent name in `frontend/src/config/chat.ts`; styles use Tailwind CSS.
+
+## Architecture and scripts
+
+`frontend/src` contains App Router pages, chat components and Zustand state. `backend/src` contains the Nest module, validated socket gateway, authorization and persistence services. `backend/prisma` contains the schema and deployable migration. Visitors join only their own conversation room; authenticated operators receive all conversations. Messages use server identity/time and database sequence ordering.
+
+```sh
+npm run lint
+npm run typecheck
+npm run build
+npm start -w backend
+npm start -w frontend
 ```
 
----
+The backend root `GET /` checks the database and returns `{"status":"ok"}` or a generic HTTP 503. Shutdown hooks disconnect Prisma. Runtime logs use Nest JSON output. Socket errors expose generic replies and log sanitized exception class/stack locations without payloads or raw exception messages.
 
-## 🧩 Component Architecture
+## Tests
 
-The application follows a modular component structure:
+Create a dedicated `chat_test` database first (with the native development database running):
 
-### Visitor Components
-- `ChatWidget`: Floating chat button and window container
-- `ChatWindow`: Main chat interface for visitors
-- `MessageBubble`: Individual message display
-- `MessageInput`: Message composition and sending
-
-### Admin Components
-- `ChatHeader`: Conversation header with visitor info
-- `VisitorList`: List of active visitors
-- `ChatContainer`: Main admin chat interface
-
-### Shared Components
-- `Avatar`: User avatar display
-- `DarkModeToggle`: Theme switching
-- `ErrorToast`: Error notifications
-- `MessageInput`: Sends messages and emits Socket.IO typing start/stop (debounced idle)
-
-### Component Communication
-- Components communicate through Zustand store
-- Real-time updates via Socket.IO
-- Props for component-specific configuration
-
----
-
-## 🧪 Dev Tips
-
-- Open admin and visitor tabs to simulate both roles
-- Test real-time message syncing
-- Test persistence:
-  - Reload the tab
-  - Visitor chat clears after closing the tab
-  - Admin chat stays saved across reloads (localStorage)
-
----
-
-## 🌍 Deployment Notes
-
-### Frontend → Vercel
-
-1. Create a new project in Vercel and connect it to your repository
-2. Configure the following settings in Vercel:
-   - Framework Preset: Next.js
-   - Root Directory: frontend
-   - Build Command: `npm run build`
-   - Output Directory: `.next`
-   - Install Command: `npm install`
-
-3. Set the following environment variables in Vercel:
-   ```
-   NEXT_PUBLIC_API_URL=https://your-railway-backend.up.railway.app
-   ```
-
-4. Deploy using the Vercel CLI:
-   ```bash
-   # Install Vercel CLI if you haven't already
-   npm i -g vercel
-
-   # Deploy
-   vercel --prod
-   ```
-
-### Backend → Railway
-
-- Set start command: `node server.js`
-- Set environment variables:
-
-```
-FRONTEND_URL=https://your-vercel-project.vercel.app
+```sh
+docker compose -f compose.dev.yaml exec -T postgres createdb -U chat chat_test
 ```
 
-- Make sure ports are not hardcoded — use `process.env.PORT`
+Run this once for a fresh development volume. Tests clean only their own conversations. Never point these commands at production.
 
----
+```sh
+export DATABASE_URL=postgresql://chat:chat@127.0.0.1:5432/chat_test
+export OPERATOR_SECRET=local-test-only-secret-at-least-32-characters
+npm run db:migrate -w backend
+npm test
+NEXT_PUBLIC_API_URL=http://127.0.0.1:43101 npm run build
+npx playwright install chromium
+npm run test:e2e
+```
 
-## 🧠 Technologies Used
+Jest uses real PostgreSQL and Socket.IO clients for isolation, authorization, retries, restart/history, validation, expiry and abuse checks. Playwright checks two-way display, ordering, focus, reconnect without reload and stale-token recovery. CI runs all checks with PostgreSQL 16 and Chromium. Detailed evidence lives in [the Slovenian thesis testing notes](docs/diploma/testing.md).
 
-- [Next.js (App Router)](https://nextjs.org/)
-- [Socket.IO](https://socket.io/)
-- [Zustand](https://github.com/pmndrs/zustand)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Vercel](https://vercel.com/)
-- [Railway](https://railway.app/)
+## Deployment and limits
 
----
+Build both workspaces, set backend environment variables, run `npm run db:migrate -w backend` before starting the backend, and serve the frontend with its API origin set at build time. `railway.json` includes a pre-deploy migration and DB health check; `frontend/vercel.json` configures the frontend workspace. See [deployment notes](docs/diploma/deployment.md). No deployment is performed by these instructions.
 
-## 💡 Future Improvements
+This version supports one backend instance and a shared operator credential. Basic controls allow 60 handshakes per peer IP/minute, 5 join attempts per socket/minute, 120 other events per socket/minute, 16 KiB socket payloads and 4,000-character messages. Behind a proxy the peer is the proxy; configure trusted client-IP limits and active-connection caps at the edge. Reconnecting can bypass per-socket limits. These controls are not distributed protection. History/list pagination, retention, individual operator accounts and multi-instance presence need further work ([issue #5](https://github.com/unjica/Live-Chat-Support-Demo/issues/5)). Review [remaining dependency findings](docs/diploma/security-audit.md) before public use.
 
-- 📁 Export/download chat history
-- 🗃 Add backend persistence (DB)
-- 🔐 Auth for both roles
-- 👥 Multi-agent support
-- 🔄 Support for parallel chats with multiple users
+## Contributing and license
 
----
+Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) and [CHANGELOG.md](CHANGELOG.md). The original project is by **Sanja Malović**, under the [MIT license](LICENSE). Thesis architecture, methodology and evidence remain separately documented in Slovenian under [docs/diploma](docs/diploma).
 
-## 📄 License
-
-MIT — use freely and modify as you wish!
-
----
-
-## 👋 Author
-
-Made with ❤️ by [Sanja Malovic](https://github.com/unjica)
+Version **2.0.0** is prepared, unreleased; see [draft release notes](RELEASE_NOTES_v2.0.0.md). Verified CI at `2692815fe3fd1d229060474ebdb20252a581a112`: **15/15 Jest**, **2/2 Playwright**, **compose-smoke passed** ([run](https://github.com/unjica/Live-Chat-Support-Demo/actions/runs/39934401485)); Docker also verified locally. Audit on 2026-10-23: **39 findings (37 high, 2 moderate)**. Final preparation changes require a new CI run after runner publication.

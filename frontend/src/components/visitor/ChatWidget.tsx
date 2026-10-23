@@ -1,20 +1,22 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { ChatWindow } from '@/components/visitor/ChatWindow';
-import { useChatStore } from '@/store/chatStore';
-import { useMessageNotifications } from '@/hooks/useMessageNotifications';
-import { Avatar } from '@/components/visitor/Avatar';
-import { chatConfig } from '@/config/chat';
+import { useState, useEffect } from "react";
+import { ChatWindow } from "@/components/visitor/ChatWindow";
+import { useChatStore } from "@/store/chatStore";
+import { useMessageNotifications } from "@/hooks/useMessageNotifications";
+import { Avatar } from "@/components/visitor/Avatar";
+import { useConnectionStore } from "@/lib/socket";
+import { chatConfig } from "@/config/chat";
 
 /** Floating launcher + optional `ChatWindow` for the visitor experience. */
 export function ChatWidget() {
+  const conversationId = useConnectionStore((s) => s.conversationId);
   const [isOpen, setIsOpen] = useState(false);
   const { user, messages } = useChatStore();
   const { unreadCount, resetUnreadCount } = useMessageNotifications(
     messages,
     isOpen,
-    user?.id
+    user?.id,
   );
 
   // Reset unread count when chat is opened
@@ -27,18 +29,19 @@ export function ChatWidget() {
   return (
     <>
       {/* Chat Window */}
-      {isOpen && user && (
+      {isOpen && user && conversationId && (
         <ChatWindow
-          conversationId={user.id}
+          conversationId={conversationId}
           onClose={() => setIsOpen(false)}
         />
       )}
 
       {/* Floating Button */}
       <button
+        aria-label="Open chat"
         onClick={() => setIsOpen(true)}
         className={`fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-110 ${
-          isOpen ? 'scale-0' : 'scale-100'
+          isOpen ? "scale-0" : "scale-100"
         } ${
           unreadCount > 0
             ? `bg-blue-700 dark:bg-blue-500`
@@ -55,8 +58,18 @@ export function ChatWidget() {
             )}
           </div>
         ) : (
-          <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          <svg
+            className="w-7 h-7 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+            />
           </svg>
         )}
       </button>
@@ -72,4 +85,4 @@ export function ChatWidget() {
       )}
     </>
   );
-} 
+}

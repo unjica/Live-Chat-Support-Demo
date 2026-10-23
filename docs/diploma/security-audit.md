@@ -1,0 +1,47 @@
+# Varnostni pregled P4 — 23. 10. 2026
+
+Pregledan je PR #3 na veji `diploma/nestjs-isolation`, osnova `main`, objavljeni commit `2692815fe3fd1d229060474ebdb20252a581a112` in priprava izdaje P4. To je pregled kode in odvisnosti; penetracijski test, meritev obremenitve ali produkcijska objava niso bili izvedeni.
+
+## Meritve npm audit
+
+P4, 23. 10. 2026: sveži polni audit potrdi 39 (37 high, 2 moderate, 0 critical/low). Ponovljeni produkcijski audit: 3 high; frontend polni 9 (7 high, 2 moderate), produkcijski 0; backend polni 32 high, produkcijski 3 high. Spodnje primerjave pred/po so zgodovinske meritve P2 istega dne, vključene v commit c379338.
+
+Ukazi v korenu: `npm audit --json`, `npm audit --omit=dev --json`; za ločena workspace še `npm audit -w frontend --json`, `npm audit -w backend --json` in obe različici z `--omit=dev`. Exit 1 pomeni ugotovljene ranljivosti, ne uspešno čistega audita. Štetje pomeni pakete z ugotovitvami (tudi podedovane metaugotovitve), ne števila neodvisnih ranljivosti; vsoti workspace nista nujno skupno število.
+
+- Celoten projekt: **41 → 39**; pred 38 high + 3 moderate, po 37 high + 2 moderate; 0 critical/low.
+- Produkcijska namestitev celotnega projekta: **5 → 3**; pred 4 high + 1 moderate, po 3 high.
+- Samo dodatne ugotovitve pri vključitvi razvojnih paketov: **36 → 36** (razlika polni minus produkcijski audit, ne ločen uradni npm rezultat).
+- Frontend vse: **11 → 9** (8 high + 3 moderate → 7 high + 2 moderate); frontend `--omit=dev`: **2 → 0** (prej 1 high + 1 moderate).
+- Backend vse: **32 → 32**, vse high; backend `--omit=dev`: **3 → 3**, vse high. Dodatne backend razvojne ugotovitve: 29; frontend: 9 pred in po.
+
+Združljiv korenski `overrides.postcss = ^8.5.31` odstrani Nextovo gnezdeno različico 8.4.31 in uporabi že razpoložljivo 8.5.31. Lockfile ohrani ostale različice. `npm ci` uspe (785 dodanih / 788 pregledanih). Odpravljeni sta audit ugotovitvi `postcss` in podedovana `next`; Next ostane 15.5.28, Prisma 6.19.3 in Tailwind 3.4.19. PostCSS ostaja znotraj iste glavne različice. Build/test preveri združljivost. Ni uporabljen `--force`, izključevanje audit ugotovitev ali oslabitev testov.
+
+## Vse korenske ugotovitve in dejanska izpostavljenost
+
+- **PostCSS**: izvorni predhodni audit navaja GHSA-qx2v-qp2m-jg93 (CSS stringify XSS) ter GHSA-6g55-p6wh-862q, GHSA-fxqj-rqcc-2cmp in GHSA-r28c-9q8g-f849 (source map branje datotek). Odpravljeno z 8.5.31, vključno s produkcijsko nameščeno Next odvisnostjo. Chat ne obdeluje CSS obiskovalcev; kljub temu je bila odvisnost popravljena.
+- **braces <=3.0.3 — high**: [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm), izčrpanje sklada pri globoko gnezdenih glob vzorcih. Objavljena najnovejša različica je 3.0.3; varnega popravka ni. Poti so Jest/micromatch, Next lint/fast-glob in Tailwind/chokidar. Gre za razvojno/build orodje, ne parser socket sporočil. Ne zaganjajte orodij nad nezaupanimi projekti/vzorci; posodobitev glavnih ogrodij tega trenutnega korena samodejno ne odpravi. Sledi [issue #4](https://github.com/unjica/Live-Chat-Support-Demo/issues/4).
+- **deepmerge-ts <8 — high**: [GHSA-ggr8-5vv4-36mx](https://github.com/advisories/GHSA-ggr8-5vv4-36mx), izčrpanje sklada pri rekurzivnih objektih. Poti `prisma → @prisma/config → deepmerge-ts` tvorijo vse tri preostale produkcijske ugotovitve, ker je Prisma CLI namenoma runtime odvisnost za `migrate deploy`. Gateway/ChatService ne uvažata CLI ali deepmerge-ts; Prisma Client je ločen paket. Konfiguracija migracij je zaupana repozitorijska vsebina, ne uporabniški socket payload. Popravek 8 je major; slepa prisilna zamenjava v Prisma 6 ni preverjena. Sprejemljivo kot dokumentirano tveganje zaupanega deployment orodja, ne dokaz varne obdelave nezaupanih konfiguracij. Ocena Prisma nadgradnje je v issue #4.
+- **postcss-selector-parser <7.1.6 — moderate**: [GHSA-rj75-hqrm-r3gf](https://github.com/advisories/GHSA-rj75-hqrm-r3gf), kvadratna zahtevnost pri parsiranju selektorjev. Tailwind 3 / postcss-nested 6 zahtevata različico 6; popravljena 7.1.6+ je prehod čez glavno različico pododvisnosti. Ostane v razvojnem CSS pipeline, ki obdeluje lastno CSS, ne sporočil obiskovalcev. Ločena združljivostna nadgradnja v issue #4; Tailwind 4 se tu ne uvaja.
+
+Preostalih 39 ugotovitev so zgornji trije koreni in njuni podedovani paketi, ne 39 neposredno dosegljivih napadov. Podrobni seznam paketov je spodaj. Nizko ocenjeno dejansko runtime izpostavljenost sklepamo iz pregledanih importov in poti podatkov; samo `--omit=dev` ne dokazuje dosegljivosti.
+
+## Pregled aplikacije in pomembne spremembe
+
+- **High, odpravljeno P0/P1:** klient ne izbira identitete operaterja/obiskovalca. Operater uporablja strežniško preverjeno skrivnost, primerjano prek hashov s `timingSafeEqual`. Obiskovalec dobi 32 naključnih bajtov; DB hrani SHA-256 hash. Vsak podatkovni/typing dogodek preveri avtorizacijo; sobe izbere strežnik. Negativni testi preverijo tuje zgodovine, sporočila in ponarejanje.
+- **High, zmanjšano P2:** prej ni bilo osnovne zaščite prijav/ustvarjanja pogovorov. Dodana omejitev 60 handshakeov/peer IP/min, 5 join poskusov/socket/min, 120 drugih dogodkov/socket/min pred validacijo/DB. Štejejo tudi napačni zahtevki. IP mapa je omejena na 10.000 aktivnih ključev; stari se odstranijo. Ne zaupamo X-Forwarded-For. Za reverse proxy je nujna dodatna omejitev pravih IP in sočasnih povezav na robu; reconnect obide socket števec, porazdeljenega limiterja ni. Frontend omeji typing_start na največ enkrat na 1,5 sekunde med neprekinjenim tipkanjem, da vsaka tipka ne porabi dogodka. Preostanek: medium, issue #5.
+- **Medium, odpravljeno P2:** prej neomejen čas veljavnosti žetona. Fiksni iztek 30 dni od nastanka pogovora, brez podaljšanja na reconnect; preveri join in avtorizacija, timer zapre povezavo ob izteku in s tem odstrani članstvo v sobi. Klient po strežniškem disconnect ponovno vzpostavi povezavo in enkrat zamenja neveljaven žeton. Zaprt status zavrne nove prijave/podatkovne zahtevke, ni pa celovit takojšnji preklic vseh že odprtih povezav. Za celovito upravljanje preklica glej issue #5. Brisanje stare zgodovine ni samodejno.
+- **Medium, odpravljeno P2:** health zdaj izvede `SELECT 1`; napaka vrne generični 503 brez DB podrobnosti. Startup že zahteva DB URL/32+ skrivnost, P2 v produkciji zavrne placeholder skrivnost ter manjkajoče/neveljavne dovoljene izvore. Prisma povezava ob startup preveri dejansko dosegljivost baze; startup napaka prepreči listen. Shutdown hooks zaprejo Prisma.
+- **Preverjeno:** 16 KiB Socket.IO okvirji, DTO whitelist/forbidNonWhitelisted, UUID, največ 4.000 znakov, zavrnjen prazen payload, CORS in dejanski handshake Origin pregled, tudi za WebSocket. Odjemalec brez Origin je dovoljen, zato Origin ni avtentikacija. React besedilo se prikaže kot besedilo; ne uporablja HTML vstavljanja za chat. Brez produkcijskih podatkov ali novih skrivnosti v repozitoriju. Runtime uporablja Nest JSON logger. Socket log vsebuje le razred napake in stack lokacije; ne logira payloadov, žetonov ali surovih exception sporočil.
+- **Medium, preostalo:** skupna skrivnost operaterjev brez individualnih računov/revokacije, neomejena zgodovina in seznam, brez retencije, en proces za presence/sobe. Ločeno načrtovanje: [issue #5](https://github.com/unjica/Live-Chat-Support-Demo/issues/5). TLS, zasebna DB, upravljanje skrivnosti in edge omejitve ostajajo zahteve upravljavca.
+- **Low, preostalo:** opozorilo Next `metadataBase`, zunanji avatarji in ročni vizualni posnetki; niso dokazani izpadi chat funkcionalnosti. Ni nepotrebnih enterprise sistemov.
+
+P2 je lokalno preverjen proti namenski pravi PostgreSQL bazi; natančni testi in CI omejitve so v [testing.md](testing.md). Preverjeni CI dne 23. 10. 2026 za commit `2692815fe3fd1d229060474ebdb20252a581a112`: **15/15 Jest**, **2/2 Playwright** in uspešen **compose-smoke** (HTTP, avtentikacija, dva izolirana obiskovalca, štiri sporočila). [Dnevnik CI](https://github.com/unjica/Live-Chat-Support-Demo/actions/runs/39934401485). To potrjuje P2/P3; končni CI za pripravo izdaje P4 mora runner preveriti po objavi novega commita. Ta pregled ne razglaša projekta za brezpogojno pripravljenega na katerokoli javno obremenitev.
+
+## Preostali paketi v polnem auditu
+
+- high (37): `@jest/console`, `@jest/core`, `@jest/environment`, `@jest/expect`, `@jest/fake-timers`, `@jest/globals`, `@jest/reporters`, `@jest/test-result`, `@jest/test-sequencer`, `@jest/transform`, `@next/eslint-plugin-next`, `@prisma/config`, `@types/jest`, `babel-jest`, `braces`, `chokidar`, `create-jest`, `deepmerge-ts`, `eslint-config-next`, `expect`, `fast-glob`, `jest`, `jest-circus`, `jest-cli`, `jest-config`, `jest-environment-node`, `jest-haste-map`, `jest-message-util`, `jest-resolve`, `jest-resolve-dependencies`, `jest-runner`, `jest-runtime`, `jest-snapshot`, `jest-watcher`, `micromatch`, `prisma`, `tailwindcss`.
+- moderate (2): `postcss-nested`, `postcss-selector-parser`.
+
+## Docker pregled P4
+
+Obe aplikacijski sliki in migracije tečejo kot node UID 1000. `.dockerignore` izključi env datoteke; skrivnosti se podajo ob zagonu, ne prek build argumentov. PostgreSQL nima javnih vrat. Healthchecki in enkratna migracija omejujejo vrstni red zagona. Privzeto geslo baze je samo lokalni primer; pred gostovanjem ga zamenjajte.

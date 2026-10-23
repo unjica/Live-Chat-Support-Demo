@@ -44,3 +44,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/backend/dist/
+/backend/coverage/
+/FINAL_REPORT.md
+
+/frontend/node_modules/
+
+/test-results/
+/playwright-report/
