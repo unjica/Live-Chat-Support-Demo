@@ -1,12 +1,14 @@
 import "reflect-metadata";
-import { INestApplication } from "@nestjs/common";
+import { INestApplication, Logger } from "@nestjs/common";
 import { io, Socket } from "socket.io-client";
 import { randomUUID } from "crypto";
 
+import { ChatService } from "../src/chat.service";
 import { PrismaService } from "../src/prisma.service";
 
 type Reply = {
   ok: boolean;
+  code?: string;
   token: string;
   identity: { id: string; conversationId: string };
   history: { content: string; sequence: number }[];
@@ -163,6 +165,8 @@ test("H3: ordered messages, duplicate prevention, reconnect history and communic
   const { s, r } = await visitor();
   const conversationId = r.identity.conversationId;
   const clientMessageId = randomUUID();
+  const broadcasts: unknown[] = [];
+  s.on("receive_message", (m) => broadcasts.push(m));
   const first = await ack(s, "send_message", {
     conversationId,
     clientMessageId,
@@ -178,6 +182,8 @@ test("H3: ordered messages, duplicate prevention, reconnect history and communic
     ),
   );
   expect(retries.every((m) => m.message.id === first.message.id)).toBe(true);
+  await delay();
+  expect(broadcasts).toHaveLength(1);
   for (const content of ["second", "third"])
     expect(
       (
@@ -246,6 +252,47 @@ test("H1: one disconnected tab does not mark another authorized tab offline", as
   });
   expect(row.tokenHash).not.toBe(a.r.token);
   expect(row.tokenHash).toHaveLength(64);
+});
+
+test("join failure clears identity/rooms and permits retry on the same socket", async () => {
+  const a = await visitor();
+  const s = await connect();
+  const chat = app.get(ChatService);
+  const logging = jest.spyOn(Logger.prototype, "error").mockImplementation(() => {});
+  const failure = jest.spyOn(chat, "history").mockRejectedValueOnce(new Error("test database failure"));
+  try {
+    const rejected = await ack(s, "user_join", { role: "visitor", token: a.r.token });
+    expect(rejected.ok).toBe(false);
+    expect(rejected.code).toBeUndefined();
+    expect(logging).toHaveBeenCalledWith("Socket request rejected (Error)", expect.any(String));
+    expect(JSON.stringify(logging.mock.calls)).not.toContain("test database failure");
+    expect(JSON.stringify(logging.mock.calls)).not.toContain(a.r.token);
+    const leaked: unknown[] = [];
+    s.on("receive_message", (m) => leaked.push(m));
+    await ack(a.s, "send_message", {
+      conversationId: a.r.identity.conversationId,
+      clientMessageId: randomUUID(), content: "must not leak to failed join",
+    });
+    await delay();
+    expect(leaked).toHaveLength(0);
+    expect((await ack(s, "select_conversation", { conversationId: a.r.identity.conversationId })).ok).toBe(false);
+    expect((await ack(s, "user_join", { role: "visitor", token: a.r.token })).ok).toBe(true);
+  } finally { failure.mockRestore(); logging.mockRestore(); }
+});
+
+test("authentication code is distinct from validation and concurrent first retries broadcast once", async () => {
+  const s = await connect();
+  expect((await ack(s, "user_join", { role: "visitor", token: "stale" })).code).toBe("UNAUTHORIZED");
+  expect((await ack(s, "user_join", { role: "invalid" })).code).toBeUndefined();
+  const a = await visitor();
+  const broadcasts: unknown[] = [];
+  a.s.on("receive_message", (m) => broadcasts.push(m));
+  const payload = { conversationId: a.r.identity.conversationId, clientMessageId: randomUUID(), content: "concurrent first send" };
+  const replies = await Promise.all(Array.from({ length: 4 }, () => ack(a.s, "send_message", payload)));
+  expect(replies.every((r) => r.ok && r.message.id === replies[0].message.id)).toBe(true);
+  await delay();
+  expect(broadcasts).toHaveLength(1);
+  expect(await db.message.count({ where: { conversationId: payload.conversationId } })).toBe(1);
 });
 
 test("H3: history survives a full Nest process lifecycle and replies still work", async () => {

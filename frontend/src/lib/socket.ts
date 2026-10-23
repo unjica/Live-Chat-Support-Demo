@@ -21,6 +21,7 @@ let credentials: {
 type Reply = {
   ok: boolean;
   error?: string;
+  code?: string;
   identity?: { id: string; role: "visitor" | "admin"; conversationId?: string };
   token?: string;
   history?: Message[];
@@ -42,11 +43,22 @@ async function join() {
     status: "Restoring conversation…",
     ready: false,
   });
-  const reply = await request("user_join", credentials);
+  let reply = await request("user_join", credentials);
+  if (generation !== currentGeneration) return;
+  if (
+    !reply.ok &&
+    reply.code === "UNAUTHORIZED" &&
+    credentials?.role === "visitor" &&
+    credentials.token
+  ) {
+    sessionStorage.removeItem("chat-token");
+    credentials = { role: "visitor" };
+    reply = await request("user_join", credentials);
+  }
   if (generation !== currentGeneration) return;
   if (!reply.ok || !reply.identity) {
     useConnectionStore.setState({
-      status: "Authentication failed. Retry login or reload.",
+      status: "Could not join. Retry login or reconnect.",
       ready: false,
     });
     useErrorStore.getState().setError(reply.error || "Authentication failed");

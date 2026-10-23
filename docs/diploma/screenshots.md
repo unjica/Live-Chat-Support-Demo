@@ -10,3 +10,5 @@ Zaslonski posnetki v tej izvedbi niso bili zajeti. Ne prikazujemo izmišljenih d
 6. Terminal z dejanskim izhodom Jest, lint, typecheck in build.
 
 Ne zajemajte OPERATOR_SECRET, žetonov, .env ali osebnih podatkov. Posnetke označite z datumom, okoljem in koraki; to je načrt ročnega preverjanja, ne trditev o izvedenem brskalniškem E2E testu.
+
+P1 vključuje `e2e/chat.spec.ts` in `playwright.config.ts` za avtomatsko preverjanje H3 ter obnovo po neveljavnem žetonu. Lokalni poskus je vrnil 2 napaki pri zagonu Chromium (`MachPortRendezvous Permission denied`), zato ni ustvaril dokazov prikaza ali posnetkov. Po uspešnem zagonu v neomejenem lokalnem/testnem okolju še vedno ročno zajemite zgornje primere; CI uspeh in vizualni dokazi še niso potrjeni.

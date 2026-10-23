@@ -50,3 +50,6 @@ next-env.d.ts
 /FINAL_REPORT.md
 
 /frontend/node_modules/
+
+/test-results/
+/playwright-report/

@@ -1,7 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { createHash, randomBytes, timingSafeEqual } from "crypto";
-import { Message } from "@prisma/client";
+import { Message, Prisma } from "@prisma/client";
 import { PrismaService } from "./prisma.service";
 import { JoinDto, MessageDto } from "./dto";
 export type Identity = {
@@ -26,7 +26,7 @@ export class ChatService {
           Buffer.from(hash(expected)),
         )
       )
-        throw new Error("Unauthorized");
+        throw new UnauthorizedException();
       return { identity: { role: "admin", id: "operator" } as Identity };
     }
     const token = dto.token || randomBytes(32).toString("hex");
@@ -35,7 +35,7 @@ export class ChatService {
           where: { tokenHash: hash(token) },
         })
       : await this.db.conversation.create({ data: { tokenHash: hash(token) } });
-    if (!conversation) throw new Error("Unauthorized");
+    if (!conversation) throw new UnauthorizedException();
     return {
       identity: {
         role: "visitor",
@@ -47,7 +47,7 @@ export class ChatService {
   }
   async authorize(user: Identity | undefined, id: string) {
     if (!user || (user.role === "visitor" && user.conversationId !== id))
-      throw new Error("Unauthorized");
+      throw new UnauthorizedException();
     if (!(await this.db.conversation.findUnique({ where: { id } })))
       throw new Error("Unknown conversation");
   }
@@ -65,18 +65,28 @@ export class ChatService {
   }
   async save(user: Identity, dto: MessageDto) {
     await this.authorize(user, dto.conversationId);
-    // An atomic database upsert also handles concurrent retries of the same client id.
-    return this.db.message.upsert({
-      where: {
-        conversationId_senderId_clientMessageId: {
-          conversationId: dto.conversationId,
-          senderId: user.id,
-          clientMessageId: dto.clientMessageId,
-        },
-      },
-      update: {},
-      create: { ...dto, senderId: user.id },
-    });
+    const key = {
+      conversationId: dto.conversationId,
+      senderId: user.id,
+      clientMessageId: dto.clientMessageId,
+    };
+    try {
+      const message = await this.db.message.create({
+        data: { ...dto, senderId: user.id },
+      });
+      return { message, created: true };
+    } catch (error: unknown) {
+      if (
+        !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+        error.code !== "P2002"
+      )
+        throw error;
+      // The unique key arbitrates concurrent retries. Only the creator broadcasts.
+      const message = await this.db.message.findUniqueOrThrow({
+        where: { conversationId_senderId_clientMessageId: key },
+      });
+      return { message, created: false };
+    }
   }
   format(m: Message) {
     return {

@@ -1,5 +1,7 @@
 import {
   Catch,
+  Logger,
+  UnauthorizedException,
   ArgumentsHost,
   ExceptionFilter,
   UseFilters,
@@ -19,14 +21,29 @@ import { ChatService, Identity } from "./chat.service";
 import { ConversationDto, JoinDto, MessageDto } from "./dto";
 @Catch()
 export class SocketErrors implements ExceptionFilter {
-  catch(_error: unknown, host: ArgumentsHost) {
+  private readonly logger = new Logger(SocketErrors.name);
+  catch(error: unknown, host: ArgumentsHost) {
+    // Do not log payloads, credentials, database URLs or raw exception messages.
+    this.logger.error(
+      `Socket request rejected (${error instanceof Error ? error.constructor.name : "validation or unknown error"})`,
+      error instanceof Error
+        ? error.stack
+            ?.split("\n")
+            .filter((line) => line.trimStart().startsWith("at "))
+            .join("\n")
+        : undefined,
+    );
     host
       .switchToWs()
       .getClient<Socket>()
       .emit("error", "Request rejected. Check credentials and input.");
     const ack = host.getArgByIndex(2);
     if (typeof ack === "function")
-      ack({ ok: false, error: "Request rejected" });
+      ack({
+        ok: false,
+        error: "Request rejected",
+        ...(error instanceof UnauthorizedException ? { code: "UNAUTHORIZED" } : {}),
+      });
   }
 }
 @UseFilters(new SocketErrors())
@@ -89,6 +106,13 @@ export class ChatGateway implements OnGatewayDisconnect {
         history,
         online: result.identity.role === "admin" ? this.online() : [],
       };
+    } catch (error: unknown) {
+      delete s.data.user;
+      for (const room of [...s.rooms]) {
+        if (room !== s.id) await s.leave(room);
+      }
+      this.server.to("operators").emit("visitors_online", this.online());
+      throw error;
     } finally {
       s.data.joining = false;
     }
@@ -110,11 +134,13 @@ export class ChatGateway implements OnGatewayDisconnect {
     if (!dto.content.trim()) throw new Error("Empty message");
     const user = this.user(s);
     await this.chat.authorize(user, dto.conversationId);
-    const message = this.chat.format(await this.chat.save(user!, dto));
-    this.server
-      .to(`conv:${dto.conversationId}`)
-      .to("operators")
-      .emit("receive_message", message);
+    const saved = await this.chat.save(user!, dto);
+    const message = this.chat.format(saved.message);
+    if (saved.created)
+      this.server
+        .to(`conv:${dto.conversationId}`)
+        .to("operators")
+        .emit("receive_message", message);
     return { ok: true, message };
   }
   private async typing(s: Socket, raw: unknown, event: string) {

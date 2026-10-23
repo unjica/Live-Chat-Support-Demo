@@ -34,5 +34,5 @@ export async function createApp() {
 }
 if (require.main === module)
   void createApp().then((app) =>
-    app.listen(process.env.PORT || 3001, "0.0.0.0"),
+    app.listen(process.env.PORT || 3001, process.env.HOST || "0.0.0.0"),
   );

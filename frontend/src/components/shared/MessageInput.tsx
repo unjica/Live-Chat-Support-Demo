@@ -128,7 +128,8 @@ export function MessageInput({ conversationId }: MessageInputProps) {
           ref={inputRef}
           type="text"
           maxLength={4000}
-          disabled={!ready || sending}
+          disabled={!ready}
+          readOnly={sending}
           value={message}
           onChange={handleChange}
           onKeyDown={handleKeyDown}

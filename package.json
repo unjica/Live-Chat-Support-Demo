@@ -11,9 +11,13 @@
     "lint": "npm run lint --workspaces",
     "typecheck": "npm run typecheck --workspaces",
     "build": "npm run build --workspaces",
-    "test": "npm test -w backend"
+    "test": "npm test -w backend",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "concurrently": "^9.1.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1"
   }
 }

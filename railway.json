@@ -1,0 +1,14 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "RAILPACK",
+    "buildCommand": "npm ci --include=dev && npm run build -w backend"
+  },
+  "deploy": {
+    "preDeployCommand": ["npm run db:migrate -w backend"],
+    "startCommand": "npm start -w backend",
+    "healthcheckPath": "/",
+    "healthcheckTimeout": 120,
+    "numReplicas": 1
+  }
+}

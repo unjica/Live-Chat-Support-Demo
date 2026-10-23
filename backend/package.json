@@ -10,7 +10,10 @@
     "lint": "eslint src test",
     "test": "jest --runInBand",
     "prisma:generate": "prisma generate",
-    "db:migrate": "prisma migrate deploy"
+    "db:migrate": "prisma migrate deploy",
+    "prebuild": "prisma generate",
+    "pretypecheck": "prisma generate",
+    "pretest": "prisma generate"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.0",
@@ -24,14 +27,14 @@
     "class-validator": "^0.14.2",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "prisma": "^6.19.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
     "@types/node": "^22.0.0",
     "eslint": "^9.0.0",
     "jest": "^29.7.0",
-    "prisma": "^6.19.0",
     "socket.io-client": "^4.8.1",
     "ts-jest": "^29.2.0",
     "ts-node": "^10.9.2",

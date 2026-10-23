@@ -10,4 +10,13 @@ Pregled izhodišča `9d5ab33` (23. 10. 2026): frontend Next.js 15.3.1 / React 19
 
 Izvedba zapira te vrzeli z Nest gatewayem, validiranimi DTO, preverjeno identiteto na vsakem dogodku, sobami, PostgreSQL, unikatnim ključem ponovitve, zaporedjem in obnovo zgodovine. README in navodila so usklajeni. Lokalna ponovitev ne uvaža stare zgodovine ali starega visitor-id.
 
-Preostalo: skupna skrivnost operaterja, brez individualnih računov/MFA, brez izteka in preklica žetonov, brez omejitve števila povezav ali porazdeljenega rate limiting, brez paginacije/retencije, brez Redis adapterja. CORS/Origin ni nadomestilo za avtentikacijo. Žeton v sessionStorage je bearer poverilnica, dostopna skriptam istega izvora. HTTPS je obvezen zunaj lokalnega okolja. Zunanji avatarji lahko razkrijejo obisk tretji strani. Avtomatski testi pokrivajo strežnik; vizualno preverjanje in brskalniški E2E ostajata ločena naloga. Nobene produkcijske namestitve ali podatkov nismo spreminjali.
+Preostalo: skupna skrivnost operaterja, brez individualnih računov/MFA, brez izteka in preklica žetonov, brez omejitve števila povezav ali porazdeljenega rate limiting, brez paginacije/retencije, brez Redis adapterja. CORS/Origin ni nadomestilo za avtentikacijo. Žeton v sessionStorage je bearer poverilnica, dostopna skriptam istega izvora. HTTPS je obvezen zunaj lokalnega okolja. Zunanji avatarji lahko razkrijejo obisk tretji strani. P1 doda Playwright in CI, vendar je lokalni Chromium blokiran pred izvedbo korakov, oddaljeni CI pa še ni bil zagnan. Vizualno preverjanje in uspešen E2E rezultat ostajata odprta. Nobene produkcijske namestitve ali podatkov nismo spreminjali.
+
+## P1: odpravljene vrzeli
+
+- Neuspešen join odstrani identiteto in članstvo v sobah; isto povezavo je mogoče ponovno prijaviti.
+- Ponovitve shranjenega sporočila vrnejo isto potrdilo brez novega broadcasta, tudi pri sočasnih prvih poskusih.
+- Strežnik beleži razred napake in lokacijo brez vhodnih podatkov ali surovega sporočila napake; odjemalec dobi generičen odgovor in ločeno avtentikacijsko kodo.
+- Neveljaven žeton obiskovalca sproži eno ponovno prijavo brez žetona; druge napake ne izbrišejo poverilnic. Vnos ostane fokusiran med pošiljanjem.
+- Prisma prebuild/pretypecheck/pretest, Railway pre-deploy migracija in Vercel workspace konfiguracija so pripravljeni. Objave ni bilo.
+- Tri lint opozorila so odpravljena; audit je zmanjšan na 41 ugotovitev, preostale so opisane v testing.md.

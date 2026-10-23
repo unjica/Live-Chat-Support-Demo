@@ -185,7 +185,10 @@ export default function AdminPage() {
                   <div className="flex items-center space-x-3">
                     <div className="relative">
                       <div className="w-10 h-10 overflow-hidden rounded-full">
-                        <img
+                        <Image
+                          width={40}
+                          height={40}
+                          unoptimized
                           src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${visitorId}&backgroundColor=b6e3f4`}
                           alt={`Visitor ${visitorId.substring(0, 8)}`}
                           className="w-full h-full object-cover"

@@ -24,7 +24,7 @@ export function MessageBubble({ message, isOwnMessage, sender }: MessageBubblePr
             {sender.name}
           </span>
         )}
-        <div className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">
+        <div data-testid="message-content" className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">
           {message.content}
         </div>
         <div className="flex items-center justify-end gap-1 text-[0.65rem] text-gray-500 dark:text-gray-400">

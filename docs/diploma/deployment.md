@@ -1,17 +1,31 @@
-# Namestitev (navodila, brez objave)
+# Namestitev (priprava, brez objave)
 
-V tej nalogi ni bil ustvarjen ali objavljen noben projekt Vercel/Railway in ni bilo dostopa do produkcijskih podatkov. Koraki so predlog za testno okolje; nastavitve ponudnikov je treba ob izvedbi preveriti.
+Noben projekt Vercel/Railway ni bil ustvarjen ali objavljen. Ni bilo dostopa do produkcijskih podatkov. Spodaj so nastavitve za poznejše testno okolje; uspešna namestitev pri ponudnikih še ni dokazana.
 
 ## Lokalno
 
-Iz korena: npm ci, npm run prisma:generate -w backend, docker compose up -d postgres. Kopirajte backend/.env.example v backend/.env in nastavite naključno skrivnost. Počakajte na zdrav PostgreSQL, nato npm run db:migrate -w backend in npm run dev. Frontend teče na 3000, backend na 3001. Če Docker ni na voljo, uporabite svoj lokalni PostgreSQL in ustrezen DATABASE_URL. Compose geslo je samo za lokalni razvoj na loopback naslovu.
+Iz korena izvedite `npm ci`, `npm run prisma:generate -w backend` in `docker compose up -d postgres`. Kopirajte `backend/.env.example` v `backend/.env` in nastavite naključno skrivnost. Kopirajte `frontend/.env.example` v `frontend/.env.local`. Počakajte na zdrav PostgreSQL, nato izvedite `npm run db:migrate -w backend` in `npm run dev`. Frontend uporablja vrata 3000, backend 3001. Compose geslo je samo za lokalni razvoj na loopback naslovu.
 
 ## Vercel frontend
 
-Predviden projekt Next.js iz frontend, z dostopom do korenskega workspace lockfile. Namestitev v korenu: npm ci; build: npm run build -w frontend. Izhod Next.js upravlja ponudnik. Nastavite NEXT_PUBLIC_API_URL na HTTPS naslov testnega Nest strežnika pred buildom; to je javna nastavitev. OPERATOR_SECRET in DATABASE_URL ne sodita v frontend. Strežniškega Socket.IO procesa ne nameščajte kot Next serverless funkcije.
+Root Directory nastavite na `frontend`, Framework Preset na Next.js in vključite **Include source files outside of the Root Directory in the Build Step**, da sta korenski workspace manifest in lockfile dostopna. `frontend/vercel.json` določa install `cd .. && npm ci --include=dev` in build `cd .. && npm run build -w frontend`. Izhodno mapo pustite na privzeti Next.js nastavitvi. Ne ustvarjajte ločenega frontend lockfila.
+
+Pred buildom nastavite `NEXT_PUBLIC_API_URL` na točen HTTPS izvor testnega Nest strežnika. Vrednost se vgradi v javno kodo; sprememba zahteva nov build. `OPERATOR_SECRET` in `DATABASE_URL` ne sodita v frontend. Socket.IO strežnik potrebuje ločen dolgotrajni proces.
 
 ## Railway backend in PostgreSQL
 
-Predviden ločen dolgoročno delujoč Node servis iz korena monorepa. Install: npm ci; build: npm run prisma:generate -w backend && npm run build -w backend; pred zagonom migracija npm run db:migrate -w backend; start: npm start -w backend. Nastavite DATABASE_URL iz zasebne povezave testnega Postgresa, OPERATOR_SECRET (naključno vsaj 32 znakov), FRONTEND_URL (točen HTTPS izvor frontenda; več izvorov z vejico) in ponudnikov PORT. Strežnik posluša na 0.0.0.0. Preverite podporo za WebSocket upgrade, TLS in zdravstveni HTTP GET /.
+Backend servis uporablja koren repozitorija in korenski `railway.json` (Railpack). Build je `npm ci --include=dev && npm run build -w backend`; `prebuild` samodejno generira Prisma Client. Prisma CLI je neposredna runtime odvisnost backend paketa, ker ga pre-deploy migracija potrebuje tudi po morebitnem odstranjevanju razvojnih odvisnosti iz slike. Razvojne odvisnosti so potrebne med buildom.
 
-Uporabite eno repliko: prisotnost in Socket.IO sobe so v procesu. Baza je trajna, datoteke procesa niso vir zgodovine. Migracije izvajajte nad namenskim okoljem in pred spremembami baze zagotovite varnostno kopijo. Preverite, da napačen Origin in napačna skrivnost nista sprejeta. Izvedite scenarij z dvema ločenima obiskovalcema in reconnectom. Pred javnim zagonom razrešite omejitve iz gap-analysis.md in pregled odvisnosti. Ta dokument ne predstavlja opravljenega testa na Vercel/Railway.
+Konfigurirani **pre-deploy** ukaz `npm run db:migrate -w backend` izvede `prisma migrate deploy` pred zagonom. Ob neuspešni migraciji se objava ne nadaljuje. Start je `npm start -w backend` (`node dist/main.js` v backend workspace). HTTP healthcheck je `GET /`, ki vrne `{"status":"ok"}`; povezava z bazo se vzpostavi ob zagonu. To ni neprekinjen test zdravja baze. Ena replika je obvezna za trenutno prisotnost in sobe v pomnilniku.
+
+Strežniške spremenljivke (vse so prikazane v `backend/.env.example`):
+
+- `DATABASE_URL`: zasebna povezava Railway Postgres v namenskem testnem okolju.
+- `OPERATOR_SECRET`: naključna skrivnost z vsaj 32 znaki; nikoli javna spremenljivka.
+- `FRONTEND_URL`: točen dovoljen izvor, npr. `https://vas-test.vercel.app`; več izvorov ločite z vejico. Nastavite tudi izvor predogleda, če ga uporabljate; ne uporabljajte wildcarda. Socket.IO CORS in preverjanje Origin uporabljata isti seznam. Odjemalci brez Origin potrebujejo enako avtentikacijo.
+- `PORT`: dodeli Railway; lokalna privzeta vrednost je 3001.
+- `HOST`: privzeto `0.0.0.0`, da je proces dosegljiv prek ponudnikovega omrežja.
+
+Po poznejši objavi preverite TLS/WebSocket upgrade, healthcheck, napačen Origin, napačno skrivnost, dva ločena obiskovalca in reconnect. Migracije izvajajte nad namensko bazo; pred spremembo obstoječe baze zagotovite varnostno kopijo. Pred javnim zagonom razrešite omejitve v gap-analysis.md in preostale audit ugotovitve.
+
+Nastavitve sledijo [Railway config reference](https://docs.railway.com/config-as-code/reference), [pre-deploy navodilom](https://docs.railway.com/deployments/pre-deploy-command) in [Vercel monorepo navodilom](https://vercel.com/docs/monorepos/monorepo-faq). Lokalno sta bila preverjena produkcijski build in start obeh procesov, ne oddaljena infrastruktura.

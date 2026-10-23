@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { User, Status } from '@/types';
 
 interface AvatarProps {
@@ -25,7 +26,10 @@ export function Avatar({ user, size = 'md' }: AvatarProps) {
   return (
     <div className="relative">
       {user.avatarUrl ? (
-        <img
+        <Image
+          width={48}
+          height={48}
+          unoptimized
           src={user.avatarUrl}
           alt={user.name}
           className={`rounded-full ${sizeClasses[size]}`}
