@@ -16,7 +16,7 @@ Pred buildom nastavite `NEXT_PUBLIC_API_URL` na točen HTTPS izvor testnega Nest
 
 Backend servis uporablja koren repozitorija in korenski `railway.json` (Railpack). Build je `npm ci --include=dev && npm run build -w backend`; `prebuild` samodejno generira Prisma Client. Prisma CLI je neposredna runtime odvisnost backend paketa, ker ga pre-deploy migracija potrebuje tudi po morebitnem odstranjevanju razvojnih odvisnosti iz slike. Razvojne odvisnosti so potrebne med buildom.
 
-Konfigurirani **pre-deploy** ukaz `npm run db:migrate -w backend` izvede `prisma migrate deploy` pred zagonom. Ob neuspešni migraciji se objava ne nadaljuje. Start je `npm start -w backend` (`node dist/main.js` v backend workspace). HTTP healthcheck je `GET /`, ki vrne `{"status":"ok"}`; povezava z bazo se vzpostavi ob zagonu. To ni neprekinjen test zdravja baze. Ena replika je obvezna za trenutno prisotnost in sobe v pomnilniku.
+Konfigurirani **pre-deploy** ukaz `npm run db:migrate -w backend` izvede `prisma migrate deploy` pred zagonom. Ob neuspešni migraciji se objava ne nadaljuje. Start je `npm start -w backend` (`node dist/main.js` v backend workspace). HTTP healthcheck je `GET /`, ki pri vsakem klicu izvede `SELECT 1` in vrne `{"status":"ok"}` ali generični HTTP 503. Povezava z bazo se preveri tudi ob zagonu. Ena replika je obvezna za trenutno prisotnost in sobe v pomnilniku.
 
 Strežniške spremenljivke (vse so prikazane v `backend/.env.example`):
 

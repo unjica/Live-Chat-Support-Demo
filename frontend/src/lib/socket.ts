@@ -53,6 +53,10 @@ async function join() {
   ) {
     sessionStorage.removeItem("chat-token");
     credentials = { role: "visitor" };
+    pending = null;
+    useChatStore.getState().clearChat();
+    useChatStore.setState({ user: null, selectedVisitorId: null });
+    useConnectionStore.setState({ conversationId: null });
     reply = await request("user_join", credentials);
   }
   if (generation !== currentGeneration) return;
@@ -99,13 +103,15 @@ export function initializeSocket() {
     reconnection: true,
   });
   socket.on("connect", () => void join());
-  socket.on("disconnect", () => {
+  socket.on("disconnect", (reason) => {
     generation++;
     useConnectionStore.setState({
       status: "Disconnected. Reconnecting…",
       ready: false,
     });
     useChatStore.setState({ typingUserIds: new Set() });
+    // Server-enforced credential expiry requires a fresh authenticated join.
+    if (reason === "io server disconnect" && credentials) socket.connect();
   });
   socket.on("connect_error", () =>
     useConnectionStore.setState({

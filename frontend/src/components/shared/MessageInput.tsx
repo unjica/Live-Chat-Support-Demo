@@ -23,6 +23,7 @@ export function MessageInput({ conversationId }: MessageInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const typingStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
+  const lastTypingStartRef = useRef(0);
   /** Conversation id for the in-flight typing burst (survives prop changes until stop). */
   const typingForConversationRef = useRef<string | null>(null);
 
@@ -95,7 +96,11 @@ export function MessageInput({ conversationId }: MessageInputProps) {
 
     if (value.trim()) {
       typingForConversationRef.current = conversationId;
-      getSocket().emit("typing_start", { conversationId });
+      // Refresh long typing bursts without emitting on every keystroke.
+      if (!isTypingRef.current || Date.now() - lastTypingStartRef.current >= 1500) {
+        getSocket().emit("typing_start", { conversationId });
+        lastTypingStartRef.current = Date.now();
+      }
       isTypingRef.current = true;
       scheduleTypingStop();
     } else {

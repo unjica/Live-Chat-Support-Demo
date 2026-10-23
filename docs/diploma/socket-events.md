@@ -28,3 +28,5 @@ sequenceDiagram
   G->>DB: history order by sequence
   G-->>V: ack + history
 ```
+
+P2: obiskovalčev žeton velja 30 dni od nastanka pogovora; `identity.expiresAt` je čas izteka v milisekundah. Ob izteku strežnik zapre socket, klient se ponovno poveže in po UNAUTHORIZED začne nov pogovor brez stare lokalne zgodovine. Omejitve: 60 handshakeov/peer IP/min, 5 prijav/socket/min, 120 drugih dogodkov/socket/min; napačni payloadi se štejejo. Omejitev zavrne zahtevo s splošnim ok:false brez dostopa do baze. Podrobnosti in omejitve proxyja: security-audit.md.

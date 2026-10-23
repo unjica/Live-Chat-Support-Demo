@@ -295,6 +295,56 @@ test("authentication code is distinct from validation and concurrent first retri
   expect(await db.message.count({ where: { conversationId: payload.conversationId } })).toBe(1);
 });
 
+test("expired and inactive visitor credentials cannot join or access history", async () => {
+  const a = await visitor();
+  await db.conversation.update({ where: { id: a.r.identity.conversationId }, data: { status: "closed" } });
+  expect((await ack(a.s, "select_conversation", { conversationId: a.r.identity.conversationId })).code).toBe("UNAUTHORIZED");
+  const s = await connect();
+  expect((await ack(s, "user_join", { role: "visitor", token: a.r.token })).code).toBe("UNAUTHORIZED");
+  await db.conversation.update({ where: { id: a.r.identity.conversationId }, data: { status: "active", createdAt: new Date(Date.now() - 31 * 86400000) } });
+  expect((await ack(s, "user_join", { role: "visitor", token: a.r.token })).code).toBe("UNAUTHORIZED");
+});
+
+test("join abuse is rejected before authentication and DB work", async () => {
+  const s = await connect();
+  for (let i = 0; i < 5; i++) expect((await ack(s, "user_join", { role: "admin", secret: "wrong" })).code).toBe("UNAUTHORIZED");
+  expect((await ack(s, "user_join", { role: "admin", secret })).ok).toBe(false);
+});
+
+test("health returns a generic 503 when the database query fails", async () => {
+  const failure = jest.spyOn(db, "$queryRaw").mockRejectedValueOnce(new Error("private connection detail"));
+  try {
+    const response = await fetch(url);
+    expect(response.status).toBe(503);
+    expect(await response.text()).not.toContain("private connection detail");
+  } finally { failure.mockRestore(); }
+});
+
+test("visitor expiry disconnects the socket and removes conversation room access", async () => {
+  const a = await visitor();
+  a.s.disconnect();
+  await db.conversation.update({ where: { id: a.r.identity.conversationId }, data: { createdAt: new Date(Date.now() - 30 * 86400000 + 1500) } });
+  const restored = await connect();
+  expect((await ack(restored, "user_join", { role: "visitor", token: a.r.token })).ok).toBe(true);
+  await new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Expired socket remained connected")), 3000);
+    restored.once("disconnect", (reason) => {
+      clearTimeout(timer);
+      expect(reason).toBe("io server disconnect");
+      resolve();
+    });
+  });
+  const retry = await connect();
+  expect((await ack(retry, "user_join", { role: "visitor", token: a.r.token })).code).toBe("UNAUTHORIZED");
+});
+
+test("event abuse counts invalid payloads and prevents further writes", async () => {
+  const a = await visitor();
+  for (let i = 0; i < 120; i++) expect((await ack(a.s, "send_message", null)).ok).toBe(false);
+  expect((await ack(a.s, "send_message", { conversationId: a.r.identity.conversationId, clientMessageId: randomUUID(), content: "over limit" })).ok).toBe(false);
+  expect(await db.message.count({ where: { conversationId: a.r.identity.conversationId } })).toBe(0);
+});
+
 test("H3: history survives a full Nest process lifecycle and replies still work", async () => {
   const a = await visitor();
   const conversationId = a.r.identity.conversationId;

@@ -5,6 +5,10 @@ import {
   ArgumentsHost,
   ExceptionFilter,
   UseFilters,
+  UseGuards,
+  CanActivate,
+  ExecutionContext,
+  Injectable,
 } from "@nestjs/common";
 import {
   ConnectedSocket,
@@ -46,6 +50,21 @@ export class SocketErrors implements ExceptionFilter {
       });
   }
 }
+// Per-connection fixed windows: rejected requests count too, before DTO/DB work.
+@Injectable()
+export class SocketRateLimit implements CanActivate {
+  canActivate(context: ExecutionContext) {
+    const socket = context.switchToWs().getClient<Socket>();
+    const now = Date.now();
+    const key = context.getHandler().name === "join" ? "joins" : "events";
+    const limit = key === "joins" ? 5 : 120;
+    const bucket = socket.data[key];
+    if (!bucket || now >= bucket.reset) socket.data[key] = { count: 0, reset: now + 60000 };
+    if (++socket.data[key].count > limit) throw new Error("Rate limit exceeded");
+    return true;
+  }
+}
+@UseGuards(SocketRateLimit)
 @UseFilters(new SocketErrors())
 @WebSocketGateway({ maxHttpBufferSize: 16384 })
 export class ChatGateway implements OnGatewayDisconnect {
@@ -87,7 +106,16 @@ export class ChatGateway implements OnGatewayDisconnect {
     s.data.joining = true;
     try {
       const result = await this.chat.join(await this.dto(JoinDto, raw));
+      if (!s.connected) throw new Error("Socket disconnected during join");
       s.data.user = result.identity;
+      if (result.identity.expiresAt) {
+        const expire = () => {
+          const remaining = result.identity.expiresAt! - Date.now();
+          if (remaining <= 0) s.disconnect(true);
+          else s.data.expiryTimer = setTimeout(expire, Math.min(remaining, 2147483647));
+        };
+        expire();
+      }
       if (result.identity.role === "admin") await s.join("operators");
       else await s.join(`conv:${result.identity.conversationId}`);
       const conversations =
@@ -107,6 +135,7 @@ export class ChatGateway implements OnGatewayDisconnect {
         online: result.identity.role === "admin" ? this.online() : [],
       };
     } catch (error: unknown) {
+      clearTimeout(s.data.expiryTimer);
       delete s.data.user;
       for (const room of [...s.rooms]) {
         if (room !== s.id) await s.leave(room);
@@ -176,6 +205,7 @@ export class ChatGateway implements OnGatewayDisconnect {
     return this.typing(s, raw, "user_stopped_typing");
   }
   handleDisconnect(s: Socket) {
+    clearTimeout(s.data.expiryTimer);
     const user = this.user(s);
     const timers = this.typingTimers.get(s.id);
     timers?.forEach((timer, id) => {

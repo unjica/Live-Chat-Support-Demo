@@ -8,6 +8,7 @@ export type Identity = {
   role: "visitor" | "admin";
   id: string;
   conversationId?: string;
+  expiresAt?: number;
 };
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 @Injectable()
@@ -35,20 +36,27 @@ export class ChatService {
           where: { tokenHash: hash(token) },
         })
       : await this.db.conversation.create({ data: { tokenHash: hash(token) } });
-    if (!conversation) throw new UnauthorizedException();
+    if (!conversation || conversation.status !== "active" ||
+      conversation.createdAt.getTime() + 30 * 24 * 60 * 60 * 1000 <= Date.now())
+      throw new UnauthorizedException();
     return {
       identity: {
         role: "visitor",
         id: conversation.visitorId,
         conversationId: conversation.id,
+        expiresAt: conversation.createdAt.getTime() + 30 * 24 * 60 * 60 * 1000,
       } as Identity,
       token,
     };
   }
   async authorize(user: Identity | undefined, id: string) {
-    if (!user || (user.role === "visitor" && user.conversationId !== id))
+    if (!user || (user.role === "visitor" && (user.conversationId !== id ||
+      !user.expiresAt || user.expiresAt <= Date.now())))
       throw new UnauthorizedException();
-    if (!(await this.db.conversation.findUnique({ where: { id } })))
+    const conversation = await this.db.conversation.findUnique({ where: { id } });
+    if (user.role === "visitor" && conversation?.status !== "active")
+      throw new UnauthorizedException();
+    if (!conversation)
       throw new Error("Unknown conversation");
   }
   history(id: string) {
