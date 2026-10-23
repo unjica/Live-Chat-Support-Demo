@@ -2,11 +2,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "installCommand": "cd .. && npm ci --include=dev",
-  "buildCommand": "cd .. && npm run build -w frontend",
-  "git": {
-    "deploymentEnabled": {
-      "main": false,
-      "diploma/nestjs-isolation": false
-    }
-  }
+  "buildCommand": "cd .. && npm run build -w frontend"
 }
