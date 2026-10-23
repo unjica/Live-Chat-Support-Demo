@@ -4,12 +4,13 @@ import { IoAdapter } from "@nestjs/platform-socket.io";
 import { ConsoleLogger, INestApplicationContext } from "@nestjs/common";
 import { ServerOptions } from "socket.io";
 import { AppModule } from "./app.module";
-import { clientIp, securityHeaders, trustedProxyHops } from "./security";
+import { clientIpHeader, resolveClientIp, securityHeaders, trustedProxyHops } from "./security";
 export class OriginAdapter extends IoAdapter {
   private attempts = new Map<string, { count: number; reset: number }>();
   constructor(
     app: INestApplicationContext,
     private readonly hops = trustedProxyHops(),
+    private readonly ipHeader = clientIpHeader(),
   ) {
     super(app);
   }
@@ -23,7 +24,7 @@ export class OriginAdapter extends IoAdapter {
       cors: { origin: origins },
       allowRequest: (
         req: {
-          headers: { origin?: string; "x-forwarded-for"?: string | string[] };
+          headers: Record<string, string | string[] | undefined> & { origin?: string };
           socket: { remoteAddress?: string };
         },
         done: (err: string | null, ok: boolean) => void,
@@ -32,8 +33,9 @@ export class OriginAdapter extends IoAdapter {
         for (const [ip, bucket] of this.attempts) {
           if (bucket.reset <= now) this.attempts.delete(ip);
         }
-        // X-Forwarded-For is only honoured for TRUST_PROXY_HOPS trusted proxies.
-        const ip = clientIp(req.socket.remoteAddress, req.headers["x-forwarded-for"], this.hops);
+        // Forwarding headers are only honoured when explicitly configured
+        // (CLIENT_IP_HEADER or TRUST_PROXY_HOPS); otherwise the socket peer is used.
+        const ip = resolveClientIp(req.socket.remoteAddress, req.headers, this.hops, this.ipHeader);
         let bucket = this.attempts.get(ip);
         if (!bucket) {
           if (this.attempts.size >= 10000) return done(null, false);
