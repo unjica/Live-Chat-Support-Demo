@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { INestApplication } from "@nestjs/common";
 import { io, Socket } from "socket.io-client";
-import { clientIp, securityHeaders, trustedProxyHops } from "../src/security";
+import { clientIp, clientIpHeader, resolveClientIp, securityHeaders, trustedProxyHops } from "../src/security";
 
 describe("clientIp", () => {
   it("ignores spoofed X-Forwarded-For when hops=0", () => {
@@ -28,6 +28,15 @@ describe("clientIp", () => {
     expect(() => trustedProxyHops("-1")).toThrow();
     expect(() => trustedProxyHops("abc")).toThrow();
   });
+  it("prefers a configured trusted client IP header", () => {
+    const h = { "x-real-ip": "203.0.113.5", "x-forwarded-for": "6.6.6.6, 100.64.0.2" };
+    expect(resolveClientIp("100.64.0.9", h, 0, "x-real-ip")).toBe("203.0.113.5");
+    expect(resolveClientIp("100.64.0.9", h, 0, undefined)).toBe("100.64.0.9");
+    expect(resolveClientIp("100.64.0.9", { "x-real-ip": "bogus" }, 0, "x-real-ip")).toBe("100.64.0.9");
+    expect(clientIpHeader(" X-Real-IP ")).toBe("x-real-ip");
+    expect(clientIpHeader("")).toBeUndefined();
+    expect(() => clientIpHeader("bad header")).toThrow();
+  });
   it("adds HSTS only in production", () => {
     expect(securityHeaders(true)["Strict-Transport-Security"]).toContain("max-age=");
     expect(securityHeaders(false)["Strict-Transport-Security"]).toBeUndefined();
@@ -47,21 +56,23 @@ describe("connection rate limit and headers (integration)", () => {
     sockets.splice(0).forEach((s) => s.disconnect());
     await Promise.all(apps.splice(0).map((a) => a.close()));
   });
-  async function start(hops: string) {
+  async function start(hops: string, ipHeader = "") {
     process.env.TRUST_PROXY_HOPS = hops;
+    process.env.CLIENT_IP_HEADER = ipHeader;
     const { createApp } = await import("../src/main");
     const app = await createApp();
     delete process.env.TRUST_PROXY_HOPS;
+    delete process.env.CLIENT_IP_HEADER;
     apps.push(app);
     await app.listen(0, "127.0.0.1");
     return app.getUrl();
   }
-  function attempt(url: string, xff: string): Promise<boolean> {
+  function attempt(url: string, xff: string, realIp?: string): Promise<boolean> {
     const s = io(url, {
       transports: ["websocket"],
       forceNew: true,
       reconnection: false,
-      extraHeaders: { "X-Forwarded-For": xff },
+      extraHeaders: realIp ? { "X-Forwarded-For": xff, "X-Real-IP": realIp } : { "X-Forwarded-For": xff },
     });
     sockets.push(s);
     return new Promise((resolve) => {
@@ -84,6 +95,15 @@ describe("connection rate limit and headers (integration)", () => {
     expect(await attempt(url, "198.51.100.99, 203.0.113.7")).toBe(false);
     // A different real client still gets its own bucket.
     expect(await attempt(url, "203.0.113.8")).toBe(true);
+  });
+
+  it("CLIENT_IP_HEADER=x-real-ip limits per header value despite rotating XFF", async () => {
+    const url = await start("0", "x-real-ip");
+    const r: boolean[] = [];
+    for (let i = 0; i < 61; i++) r.push(await attempt(url, `198.51.100.${i + 1}`, "203.0.113.20"));
+    expect(r.slice(0, 60).every(Boolean)).toBe(true);
+    expect(r[60]).toBe(false);
+    expect(await attempt(url, "198.51.100.1", "203.0.113.21")).toBe(true);
   });
 
   it("hops=0 ignores rotating spoofed X-Forwarded-For", async () => {

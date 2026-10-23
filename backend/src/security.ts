@@ -39,6 +39,32 @@ export function clientIp(
   return normalize(chain[index]) ?? peer;
 }
 
+/**
+ * Optional single-value client IP header set by a trusted edge, e.g. Railway's
+ * `X-Real-IP` (overwritten on every public request). Empty = disabled.
+ */
+export function clientIpHeader(raw = process.env.CLIENT_IP_HEADER): string | undefined {
+  const name = raw?.trim().toLowerCase();
+  if (!name) return undefined;
+  if (!/^[a-z0-9-]+$/.test(name)) throw new Error("CLIENT_IP_HEADER must be a header name");
+  return name;
+}
+
+/** Resolves the client IP from a trusted single-value header, else via clientIp(). */
+export function resolveClientIp(
+  remoteAddress: string | undefined,
+  headers: Record<string, string | string[] | undefined>,
+  hops: number,
+  header?: string,
+): string {
+  if (header) {
+    const raw = headers[header];
+    const value = normalize(Array.isArray(raw) ? raw[0] : raw);
+    if (value) return value;
+  }
+  return clientIp(remoteAddress, headers["x-forwarded-for"], hops);
+}
+
 /** Minimal security headers for a JSON/WebSocket API (no HTML is served). */
 export function securityHeaders(production = process.env.NODE_ENV === "production") {
   const headers: Record<string, string> = {
