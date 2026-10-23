@@ -36,6 +36,13 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
+      - name: Scan frontend bundle for server secrets
+        run: |
+          test -d frontend/.next/static
+          ! grep -rqF "$OPERATOR_SECRET" frontend/.next/static
+          ! grep -rqF "$DATABASE_URL" frontend/.next/static
+          ! grep -rqE "postgres(ql)?://|OPERATOR_SECRET|DATABASE_URL" frontend/.next/static
+          grep -rqF "$NEXT_PUBLIC_API_URL" frontend/.next/static
       - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
