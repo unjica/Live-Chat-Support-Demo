@@ -31,3 +31,12 @@ Railway applied only the `build` section of the root `railway.json` for the `bac
 | Variables | `DATABASE_URL=${{Postgres.DATABASE_URL}}` (private network), `OPERATOR_SECRET`, `FRONTEND_URL`, `HOST=0.0.0.0`, `NODE_ENV=production`, `CLIENT_IP_HEADER=x-real-ip`, `TRUST_PROXY_HOPS=0` |
 
 Railway's edge [overwrites `X-Real-IP` and `X-Forwarded-For`](https://docs.railway.com/networking/public-networking/specs-and-limits) on public requests, but `X-Forwarded-For` can include an internal Railway hop that changes between requests. Because the hop count is not guaranteed, the per-IP limit uses the documented `CLIENT_IP_HEADER=x-real-ip` on Railway. Verified 2026-10-23 from a single fixed IP: handshakes 61+ were rejected (403) even with forged `X-Forwarded-For`/`X-Real-IP`. Test from a client with a stable egress IP; some cloud sandboxes rotate egress addresses and look like many clients. Private-network (`*.railway.internal`) requests skip the edge and can set this header, so keep untrusted services out of the environment. Do not expose PostgreSQL through a TCP proxy. The backend sends `X-Content-Type-Options`, `X-Frame-Options: DENY`, a restrictive API `Content-Security-Policy`, `Referrer-Policy`, and HSTS when `NODE_ENV=production`; `X-Powered-By` is disabled.
+
+## Post-deploy verification
+
+`scripts/verify-deployment.cjs` checks TLS for both hosts, that `/`, `/visitor` and `/admin` load, that the served bundle embeds `API_URL` and no server secrets, foreign-origin rejection, operator authentication, a visitor/operator round trip over WSS, isolation between two visitors, and reconnect with history. It creates two small test conversations whose messages start with `verify-`. The operator secret is read from a file and never printed:
+
+```bash
+SITE_URL=https://chat.tacko.io API_URL=https://<backend-domain> \
+OPERATOR_SECRET_FILE=/path/to/operator-secret node scripts/verify-deployment.cjs
+```
