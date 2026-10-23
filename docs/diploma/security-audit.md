@@ -1,8 +1,10 @@
-# Varnostni pregled P2 — 23. 10. 2026
+# Varnostni pregled P4 — 23. 10. 2026
 
-Pregledan je PR #3 na veji `diploma/nestjs-isolation`, osnova `main`, obstoječi commit `5a603740038b3fa17ffd08dfd7a2ccf824ee9a1f` in necommitane spremembe P2. To je pregled kode in odvisnosti; penetracijski test, meritev obremenitve ali produkcijska objava niso bili izvedeni.
+Pregledan je PR #3 na veji `diploma/nestjs-isolation`, osnova `main`, objavljeni commit `2692815fe3fd1d229060474ebdb20252a581a112` in priprava izdaje P4. To je pregled kode in odvisnosti; penetracijski test, meritev obremenitve ali produkcijska objava niso bili izvedeni.
 
-## Meritve npm audit pred/po
+## Meritve npm audit
+
+P4, 23. 10. 2026: sveži polni audit potrdi 39 (37 high, 2 moderate, 0 critical/low). Ponovljeni produkcijski audit: 3 high; frontend polni 9 (7 high, 2 moderate), produkcijski 0; backend polni 32 high, produkcijski 3 high. Spodnje primerjave pred/po so zgodovinske meritve P2 istega dne, vključene v commit c379338.
 
 Ukazi v korenu: `npm audit --json`, `npm audit --omit=dev --json`; za ločena workspace še `npm audit -w frontend --json`, `npm audit -w backend --json` in obe različici z `--omit=dev`. Exit 1 pomeni ugotovljene ranljivosti, ne uspešno čistega audita. Štetje pomeni pakete z ugotovitvami (tudi podedovane metaugotovitve), ne števila neodvisnih ranljivosti; vsoti workspace nista nujno skupno število.
 
@@ -33,9 +35,13 @@ Preostalih 39 ugotovitev so zgornji trije koreni in njuni podedovani paketi, ne 
 - **Medium, preostalo:** skupna skrivnost operaterjev brez individualnih računov/revokacije, neomejena zgodovina in seznam, brez retencije, en proces za presence/sobe. Ločeno načrtovanje: [issue #5](https://github.com/unjica/Live-Chat-Support-Demo/issues/5). TLS, zasebna DB, upravljanje skrivnosti in edge omejitve ostajajo zahteve upravljavca.
 - **Low, preostalo:** opozorilo Next `metadataBase`, zunanji avatarji in ročni vizualni posnetki; niso dokazani izpadi chat funkcionalnosti. Ni nepotrebnih enterprise sistemov.
 
-P2 je lokalno preverjen proti namenski pravi PostgreSQL bazi; natančni testi in CI omejitve so v [testing.md](testing.md). CI P1 je zelen, finalni CI P2 mora potrditi runner po commitu. Ta pregled ne razglaša projekta za brezpogojno pripravljenega na katerokoli javno obremenitev.
+P2 je lokalno preverjen proti namenski pravi PostgreSQL bazi; natančni testi in CI omejitve so v [testing.md](testing.md). Preverjeni CI dne 23. 10. 2026 za commit `2692815fe3fd1d229060474ebdb20252a581a112`: **15/15 Jest**, **2/2 Playwright** in uspešen **compose-smoke** (HTTP, avtentikacija, dva izolirana obiskovalca, štiri sporočila). [Dnevnik CI](https://github.com/unjica/Live-Chat-Support-Demo/actions/runs/39934401485). To potrjuje P2/P3; končni CI za pripravo izdaje P4 mora runner preveriti po objavi novega commita. Ta pregled ne razglaša projekta za brezpogojno pripravljenega na katerokoli javno obremenitev.
 
 ## Preostali paketi v polnem auditu
 
 - high (37): `@jest/console`, `@jest/core`, `@jest/environment`, `@jest/expect`, `@jest/fake-timers`, `@jest/globals`, `@jest/reporters`, `@jest/test-result`, `@jest/test-sequencer`, `@jest/transform`, `@next/eslint-plugin-next`, `@prisma/config`, `@types/jest`, `babel-jest`, `braces`, `chokidar`, `create-jest`, `deepmerge-ts`, `eslint-config-next`, `expect`, `fast-glob`, `jest`, `jest-circus`, `jest-cli`, `jest-config`, `jest-environment-node`, `jest-haste-map`, `jest-message-util`, `jest-resolve`, `jest-resolve-dependencies`, `jest-runner`, `jest-runtime`, `jest-snapshot`, `jest-watcher`, `micromatch`, `prisma`, `tailwindcss`.
 - moderate (2): `postcss-nested`, `postcss-selector-parser`.
+
+## Docker pregled P4
+
+Obe aplikacijski sliki in migracije tečejo kot node UID 1000. `.dockerignore` izključi env datoteke; skrivnosti se podajo ob zagonu, ne prek build argumentov. PostgreSQL nima javnih vrat. Healthchecki in enkratna migracija omejujejo vrstni red zagona. Privzeto geslo baze je samo lokalni primer; pred gostovanjem ga zamenjajte.

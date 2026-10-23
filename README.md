@@ -40,12 +40,12 @@ To update, back up first, pull reviewed source changes, then run `docker compose
 
 ## Native development quick start
 
-Requires Node.js 22+ (CI uses 22), npm and Docker Compose or PostgreSQL 16.
+Requires Node.js 22+ (CI uses 22), npm and Docker Compose or PostgreSQL 16. Ports 3000, 3001 and 5432 must be free for these defaults; if PostgreSQL is already installed, use a dedicated local database and update `DATABASE_URL` instead of starting Compose.
 
 ```sh
 npm ci
 npm run prisma:generate -w backend
-docker compose -f compose.dev.yaml up -d postgres
+docker compose -f compose.dev.yaml up -d --wait postgres
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env.local
 # Set OPERATOR_SECRET in backend/.env to a random secret of at least 32 characters.
@@ -54,17 +54,22 @@ npm run db:migrate -w backend
 npm run dev
 ```
 
-Open http://localhost:3000/visitor and http://localhost:3000/admin. Enter the backend operator secret in the operator login form. Use separate browser profiles for independent visitors; duplicated tabs can inherit sessionStorage. `npm run dev` starts both workspaces. The explicit `compose.dev.yaml` file starts only PostgreSQL, bound to loopback with a persistent volume; its example credentials are for local development.
+Open http://localhost:3000/visitor and http://localhost:3000/admin. Enter the backend operator secret in the operator login form. Use separate browser profiles for independent visitors; duplicated tabs can inherit sessionStorage. `npm run dev` starts both workspaces. If a restricted environment reports Watchpack `EMFILE`, use `WATCHPACK_POLLING=true npm run dev`. The explicit `compose.dev.yaml` file starts only PostgreSQL, bound to loopback with a persistent volume; its example credentials are for local development.
 
 ## Configuration
 
 Backend workspace scripts load `backend/.env`. Frontend loads `frontend/.env.local`.
 
-- `DATABASE_URL`: PostgreSQL connection URL; use a separate database for tests.
-- `OPERATOR_SECRET`: 32+ characters; kept on the server and entered at operator login, never in `NEXT_PUBLIC_*`. Shared by operators; rotate it and restart the server to terminate existing sessions.
-- `FRONTEND_URL`: comma-separated exact allowed browser origins, default http://localhost:3000 in development. Required in production. Origin checks supplement authentication; non-browser clients can omit Origin.
-- `PORT` / `HOST`: backend defaults 3001 / 0.0.0.0.
-- `NEXT_PUBLIC_API_URL`: public backend origin, default http://localhost:3001; embedded in the frontend at build time.
+| Variable | Native default / purpose |
+| --- | --- |
+| `DATABASE_URL` | Required PostgreSQL URL; example uses localhost:5432/chat. Use a separate test database. |
+| `OPERATOR_SECRET` | Required 32+ characters; server only, entered at login. Rotate and restart to end existing sessions. |
+| `FRONTEND_URL` | Exact allowed origins, comma-separated; development default http://localhost:3000, required in production. Non-browser clients may omit Origin but still authenticate. |
+| `PORT` / `HOST` | Backend 3001 / 0.0.0.0. |
+| `NEXT_PUBLIC_API_URL` | Browser backend origin, default http://localhost:3001; embedded at build time. |
+| `POSTGRES_PASSWORD` | Compose DB password; local example only. Use URL-safe hex before hosting. |
+| `BIND_ADDRESS` | Compose published app interface, default 127.0.0.1. |
+| `FRONTEND_PORT` / `BACKEND_PORT` | Compose published app ports, default 3000 / 3001; also update browser URLs when changing. |
 
 Visitor bearer tokens live in sessionStorage and expire 30 days after conversation creation. Expired tokens start a new conversation; old history stays in the database and is not automatically deleted. Use HTTPS/WSS outside localhost. Never commit `.env` files or log credentials.
 
@@ -86,7 +91,13 @@ The backend root `GET /` checks the database and returns `{"status":"ok"}` or a 
 
 ## Tests
 
-Create a dedicated `chat_test` database first. Tests clean only their own conversations. Never point these commands at production.
+Create a dedicated `chat_test` database first (with the native development database running):
+
+```sh
+docker compose -f compose.dev.yaml exec -T postgres createdb -U chat chat_test
+```
+
+Run this once for a fresh development volume. Tests clean only their own conversations. Never point these commands at production.
 
 ```sh
 export DATABASE_URL=postgresql://chat:chat@127.0.0.1:5432/chat_test
@@ -109,3 +120,5 @@ This version supports one backend instance and a shared operator credential. Bas
 ## Contributing and license
 
 Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) and [CHANGELOG.md](CHANGELOG.md). The original project is by **Sanja Malović**, under the [MIT license](LICENSE). Thesis architecture, methodology and evidence remain separately documented in Slovenian under [docs/diploma](docs/diploma).
+
+Version **2.0.0** is prepared, unreleased; see [draft release notes](RELEASE_NOTES_v2.0.0.md). Verified CI at `2692815fe3fd1d229060474ebdb20252a581a112`: **15/15 Jest**, **2/2 Playwright**, **compose-smoke passed** ([run](https://github.com/unjica/Live-Chat-Support-Demo/actions/runs/39934401485)); Docker also verified locally. Audit on 2026-10-23: **39 findings (37 high, 2 moderate)**. Final preparation changes require a new CI run after runner publication.

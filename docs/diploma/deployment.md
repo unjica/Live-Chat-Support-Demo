@@ -33,3 +33,5 @@ Nastavitve sledijo [Railway config reference](https://docs.railway.com/config-as
 ## Polni Docker sklad (P3)
 
 Za frontend, backend in PostgreSQL uporabite korenski `.env.example` ter `docker compose up --build -d --wait`. Navodila, migracijska storitev, trajni volumen, TLS, varnostne kopije in posodobitve so opisani v [README](../../README.md#docker-quick-start). Primerjava gostovanja je v [hosting.md](../hosting.md). Vrata baze privzeto niso objavljena.
+
+Preverjeni CI dne 23. 10. 2026 za commit `2692815fe3fd1d229060474ebdb20252a581a112`: **15/15 Jest**, **2/2 Playwright** in uspešen **compose-smoke** (HTTP, avtentikacija, dva izolirana obiskovalca, štiri sporočila). [Dnevnik CI](https://github.com/unjica/Live-Chat-Support-Demo/actions/runs/39934401485). To potrjuje P2/P3; končni CI za pripravo izdaje P4 mora runner preveriti po objavi novega commita.
