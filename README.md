@@ -36,7 +36,7 @@ docker compose exec -T postgres pg_dump -U chat -d chat -Fc > chat.dump
 # docker compose exec -T postgres pg_restore -U chat -d chat < chat.dump
 ```
 
-To update, back up first, pull reviewed source changes, then run `docker compose up --build -d --wait`. Migrations run before backend startup; review schema changes and recovery plans before updating a live instance. Existing dependency/security limits still apply. See [hosting options and pricing sources](docs/hosting.md).
+To update, back up first, pull reviewed source changes, then run `docker compose up --build -d --wait`. Migrations run before backend startup; review schema changes and recovery plans before updating a live instance. Existing dependency/security limits still apply. See [hosting options and pricing sources](docs/hosting.md) and the [v2.0 release procedure](docs/release-v2.md).
 
 ## Native development quick start
 
@@ -69,7 +69,7 @@ Backend workspace scripts load `backend/.env`. Frontend loads `frontend/.env.loc
 | `CLIENT_IP_HEADER` | Optional single-value client IP header set by a trusted edge, default empty (disabled). On Railway set `x-real-ip`: the Railway edge overwrites `X-Real-IP` and `X-Forwarded-For` on every public request, and its `X-Forwarded-For` may contain an extra internal hop, so hop counting is unreliable there. Requests over Railway private networking bypass the edge, so only enable this when no untrusted service can reach the backend privately. Invalid values fall back to `TRUST_PROXY_HOPS`/socket peer. |
 | `TRUST_PROXY_HOPS` | Number of trusted reverse proxies in front of the backend (0–10), default 0 = use the socket peer address and ignore `X-Forwarded-For`. Set 1 behind a single nginx/Caddy that appends `X-Forwarded-For`. Never set it higher than the real number of proxies, otherwise clients can spoof their IP and bypass the per-IP connection limit. |
 | `NEXT_PUBLIC_API_URL` | Browser backend origin, default http://localhost:3001; embedded at build time. |
-| `NEXT_PUBLIC_SITE_URL` | Optional public frontend origin (e.g. https://chat.tacko.io) used as `metadataBase` for absolute OG/Twitter image URLs; embedded at build time. |
+| `NEXT_PUBLIC_SITE_URL` | Optional public frontend origin (e.g. https://live-chat.tacko.io) used as `metadataBase` for absolute OG/Twitter image URLs; embedded at build time. |
 | `POSTGRES_PASSWORD` | Compose DB password; local example only. Use URL-safe hex before hosting. |
 | `BIND_ADDRESS` | Compose published app interface, default 127.0.0.1. |
 | `FRONTEND_PORT` / `BACKEND_PORT` | Compose published app ports, default 3000 / 3001; also update browser URLs when changing. |
@@ -116,7 +116,7 @@ Jest uses real PostgreSQL and Socket.IO clients for isolation, authorization, re
 
 ## Deployment and limits
 
-Build both workspaces, set backend environment variables, run `npm run db:migrate -w backend` before starting the backend, and serve the frontend with its API origin set at build time. `railway.json` includes a pre-deploy migration and DB health check; `frontend/vercel.json` configures the frontend workspace. See [deployment notes](docs/diploma/deployment.md). No deployment is performed by these instructions.
+Build both workspaces, set backend environment variables, run `npm run db:migrate -w backend` before starting the backend, and serve the frontend with its API origin set at build time. `railway.json` includes a pre-deploy migration and DB health check; `frontend/vercel.json` configures the frontend workspace. See [deployment notes](docs/diploma/deployment.md) and the [v2.0 release procedure](docs/release-v2.md) for live-chat.tacko.io. No deployment is performed by these instructions.
 
 This version supports one backend instance and a shared operator credential. Basic controls allow 60 handshakes per peer IP/minute, 5 join attempts per socket/minute, 120 other events per socket/minute, 16 KiB socket payloads and 4,000-character messages. Behind a proxy the peer is the proxy; configure trusted client-IP limits and active-connection caps at the edge. Reconnecting can bypass per-socket limits. These controls are not distributed protection. History/list pagination, retention, individual operator accounts and multi-instance presence need further work ([issue #5](https://github.com/unjica/Live-Chat-Support-Demo/issues/5)). Review [remaining dependency findings](docs/diploma/security-audit.md) before public use.
 

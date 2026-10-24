@@ -12,7 +12,7 @@ const inter = Inter({ subsets: ["latin"] });
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
 export const metadata: Metadata = {
-  // Absolute base for OG/Twitter images, e.g. https://chat.tacko.io. Optional.
+  // Absolute base for OG/Twitter images, e.g. https://live-chat.tacko.io. Optional.
   ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
   title: "Live Chat Support",
   description: "Real-time chat support system for visitors and agents",
