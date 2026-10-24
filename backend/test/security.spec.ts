@@ -113,6 +113,28 @@ describe("connection rate limit and headers (integration)", () => {
     expect(r[60]).toBe(false);
   });
 
+  it("accepts every configured cross-origin frontend and rejects unlisted preview origins", async () => {
+    process.env.FRONTEND_URL =
+      "https://live-chat-support-demo.vercel.app, https://live-chat.tacko.io,https://live-chat-support-demo-git-release-v2-unjicas-projects.vercel.app";
+    const url = await start("0");
+    delete process.env.FRONTEND_URL;
+    const withOrigin = (origin: string) => {
+      const s = io(url, { transports: ["websocket"], forceNew: true, reconnection: false, extraHeaders: { Origin: origin } });
+      sockets.push(s);
+      return new Promise<boolean>((resolve) => {
+        s.once("connect", () => resolve(true));
+        s.once("connect_error", () => resolve(false));
+      });
+    };
+    expect(await withOrigin("https://live-chat.tacko.io")).toBe(true);
+    expect(await withOrigin("https://live-chat-support-demo.vercel.app")).toBe(true);
+    expect(await withOrigin("https://live-chat-support-demo-git-release-v2-unjicas-projects.vercel.app")).toBe(true);
+    expect(await withOrigin("https://live-chat-support-demo-q1vpm8z8d-unjicas-projects.vercel.app")).toBe(false);
+    expect(await withOrigin("https://chat.tacko.io")).toBe(false);
+    const res = await fetch(url + "/socket.io/?EIO=4&transport=polling", { headers: { Origin: "https://evil.example" } });
+    expect(res.status).toBe(403);
+  });
+
   it("sends security headers without x-powered-by on HTTP and Engine.IO", async () => {
     const url = await start("0");
     for (const path of ["/", "/socket.io/?EIO=4&transport=polling"]) {

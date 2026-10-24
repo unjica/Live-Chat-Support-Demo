@@ -113,12 +113,15 @@ export function initializeSocket() {
     // Server-enforced credential expiry requires a fresh authenticated join.
     if (reason === "io server disconnect" && credentials) socket.connect();
   });
-  socket.on("connect_error", () =>
+  socket.on("connect_error", () => {
     useConnectionStore.setState({
       status: "Connection failed. Retrying…",
       ready: false,
-    }),
-  );
+    });
+    useErrorStore
+      .getState()
+      .setError("Cannot reach the chat server. Retrying…");
+  });
   socket.on("error", (error: string) =>
     useErrorStore.getState().setError(error),
   );
