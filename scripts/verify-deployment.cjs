@@ -1,6 +1,6 @@
 // Post-deploy check for a public frontend + backend pair. Creates two short test
 // conversations (prefixed "verify-"). Usage:
-//   SITE_URL=https://chat.tacko.io API_URL=https://backend.example \
+//   SITE_URL=https://live-chat.tacko.io API_URL=https://backend.example \
 //   OPERATOR_SECRET_FILE=/path/to/secret node scripts/verify-deployment.cjs
 // The operator secret is read from a file and never printed.
 const fs = require('node:fs');
