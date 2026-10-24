@@ -11,6 +11,7 @@ import { chatConfig } from "@/config/chat";
 /** Floating launcher + optional `ChatWindow` for the visitor experience. */
 export function ChatWidget() {
   const conversationId = useConnectionStore((s) => s.conversationId);
+  const status = useConnectionStore((s) => s.status);
   const [isOpen, setIsOpen] = useState(false);
   const { user, messages } = useChatStore();
   const { unreadCount, resetUnreadCount } = useMessageNotifications(
@@ -34,6 +35,15 @@ export function ChatWidget() {
           conversationId={conversationId}
           onClose={() => setIsOpen(false)}
         />
+      )}
+
+      {isOpen && !(user && conversationId) && (
+        <div
+          role="alert"
+          className="fixed bottom-24 right-6 z-50 max-w-xs bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 text-sm text-gray-800 dark:text-white"
+        >
+          {status}
+        </div>
       )}
 
       {/* Floating Button */}

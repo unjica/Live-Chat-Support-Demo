@@ -43,6 +43,8 @@ jobs:
           ! grep -rqF "$DATABASE_URL" frontend/.next/static
           ! grep -rqE "postgres(ql)?://|OPERATOR_SECRET|DATABASE_URL" frontend/.next/static
           grep -rqF "$NEXT_PUBLIC_API_URL" frontend/.next/static
+          # The localhost fallback must never ship: it means NEXT_PUBLIC_API_URL was missing at build time.
+          ! grep -rqF "localhost:3001" frontend/.next/static
       - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
