@@ -23,7 +23,7 @@ Checked 2026-10-24. Target: frontend `https://live-chat.tacko.io` (Vercel), back
    OPERATOR_SECRET_FILE=/path/to/operator-secret node scripts/verify-deployment.cjs
    ```
 6. **If anything fails:** Vercel → Deployments → previous production deployment → **Instant Rollback**. The v1 Railway backend is untouched.
-7. **Clean up test data** after a fresh backup: delete only the conversations whose messages start with `verify-` or were created during testing.
+7. **Clean up test data** after a fresh backup: delete only the conversations whose IDs you recorded during testing, or whose messages all start with `verify-`. Never select by time range.
 8. Only after a stable period, with separate approval: create GitHub release `v2.0.0` and retire the v1 backend.
 
 If you want `live-chat.tacko.io` on v2 while `live-chat-support-demo.vercel.app` stays on v1, assign the domain to Git branch `release/v2` (Settings → Domains → Edit). That turns it into a preview domain, which Vercel Authentication blocks for the public unless you add a Deployment Protection exception. That exception is a paid Pro add-on on Vercel.
