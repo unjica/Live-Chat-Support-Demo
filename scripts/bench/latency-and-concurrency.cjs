@@ -14,7 +14,10 @@ const N_LAT = Number(process.env.N_LATENCY || 100);
 const VISITORS = Number(process.env.VISITORS || 100);
 const PER_VISITOR = Number(process.env.PER_VISITOR || 5);
 if (!SECRET) throw new Error("OPERATOR_SECRET required");
-if (!/^http:\/\/(127\.0\.0\.1|localhost)/.test(API)) throw new Error("Local API only");
+{
+  const u = new URL(API);
+  if (u.protocol !== "http:" || !["127.0.0.1", "localhost", "[::1]"].includes(u.hostname)) throw new Error("Local API only");
+}
 let ip = 0;
 const mk = () => {
   ip++;
@@ -43,10 +46,10 @@ const fmt = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, type
   for (let i = 0; i < N_LAT; i++) {
     const c = `bench-${i}-${randomUUID()}`;
     const t0 = performance.now(); const got = waitFor(op, c);
-    await ack(v, "send_message", { conversationId: cid, clientMessageId: randomUUID(), content: c });
+    if (!(await ack(v, "send_message", { conversationId: cid, clientMessageId: randomUUID(), content: c })).ok) throw new Error(`visitor send ${i} rejected`);
     ackT.push(performance.now() - t0); up.push((await got) - t0);
     const r = `reply-${c}`; const t1 = performance.now(); const back = waitFor(v, r);
-    await ack(op, "send_message", { conversationId: cid, clientMessageId: randomUUID(), content: r });
+    if (!(await ack(op, "send_message", { conversationId: cid, clientMessageId: randomUUID(), content: r })).ok) throw new Error(`operator reply ${i} rejected`);
     down.push((await back) - t1);
   }
   v.disconnect(); op.disconnect();
