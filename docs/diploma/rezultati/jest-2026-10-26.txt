@@ -1,0 +1,28 @@
+
+> live-chat-support-demo-monorepo@2.0.0 test
+> npm test -w backend
+
+
+> live-chat-support-demo-backend@2.0.0 pretest
+> prisma generate
+
+Prisma schema loaded from prisma/schema.prisma
+
+✔ Generated Prisma Client (v6.19.3) to ./../node_modules/@prisma/client in 71ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
+
+
+> live-chat-support-demo-backend@2.0.0 test
+> jest --runInBand
+
+PASS test/chat.spec.ts
+PASS test/security.spec.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       28 passed, 28 total
+Snapshots:   0 total
+Time:        6.012 s
+Ran all test suites.
