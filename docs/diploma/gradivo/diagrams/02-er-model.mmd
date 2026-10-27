@@ -1,0 +1,20 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ecfdf5", "primaryBorderColor": "#059669", "lineColor": "#334155", "fontFamily": "Inter, Arial, sans-serif"}}}%%
+erDiagram
+  Conversation ||--o{ Message : "messages"
+  Conversation {
+    String id PK
+    String visitorId UK
+    String tokenHash UK
+    String status
+    DateTime createdAt
+    Int operatorLastReadSequence "nullable"
+  }
+  Message {
+    String id PK
+    Int sequence UK "autoincrement"
+    String conversationId FK
+    String clientMessageId
+    String senderId
+    String content
+    DateTime createdAt
+  }

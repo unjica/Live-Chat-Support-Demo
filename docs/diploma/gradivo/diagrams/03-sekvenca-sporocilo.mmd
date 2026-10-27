@@ -1,0 +1,24 @@
+%%{init: {"theme": "base", "themeVariables": {"actorBkg": "#e8f1ff", "actorBorder": "#2563eb", "lineColor": "#334155", "fontFamily": "Inter, Arial, sans-serif"}}}%%
+sequenceDiagram
+  autonumber
+  actor Obiskovalec
+  participant FE as Next.js odjemalec
+  participant GW as NestJS ChatGateway
+  participant SVC as ChatService
+  participant DB as PostgreSQL
+  actor Operater
+
+  Obiskovalec->>FE: vnos sporočila
+  FE->>GW: send_message {conversationId, content, clientMessageId}
+  GW->>SVC: shrani in razpošlji
+  SVC->>DB: INSERT Message (sequence++)
+  DB-->>SVC: Message
+  SVC-->>GW: potrditev + dogodek
+  GW-->>FE: message (obiskovalcu)
+  GW-->>Operater: message (soba operatorjev)
+  Operater->>FE: odgovor operaterja
+  FE->>GW: send_message
+  GW->>SVC: shrani
+  SVC->>DB: INSERT Message
+  DB-->>SVC: Message
+  GW-->>Obiskovalec: message (soba pogovora)

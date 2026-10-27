@@ -1,6 +1,11 @@
 # Diplomsko gradivo — Live Chat Support v2.0
 
-Naslov: **»Razvoj spletne aplikacije za podporo uporabnikom v realnem času«**. Potrjena dispozicija, hipoteze H1–H3 in obseg niso spremenjeni. Gradivo opisuje dejansko implementacijo na veji `main` (commit `1114039`, 24. 10. 2026). Vsaka trditev je označena kot **preverjeno** (z navedbo načina) ali **načrtovano**.
+Naslov: **»Razvoj spletne aplikacije za podporo uporabnikom v realnem času«**. Potrjena dispozicija, hipoteze H1–H3 in obseg niso spremenjeni. Gradivo opisuje dejansko implementacijo na veji `main` (po PR #14 dokumentacija + PR #15 UX: `localStorage`, `operatorLastReadSequence`, obvestila o prisotnosti; produkcijski backend-v2 deploy `9cfd4f28`, 27. 10. 2026). Vsaka trditev je označena kot **preverjeno** (z navedbo načina) ali **načrtovano**.
+
+
+## Vizualno in tehnično gradivo za Word (27. 10. 2026)
+
+Mapa **[gradivo/](gradivo/)** vsebuje posnetke zaslona, diagrame (Mermaid + SVG/PNG), kratko tehnično dokumentacijo in dokaze testiranja z zemljevidom v podpoglavja 4.x / 5.x / 6.x. Glej [gradivo/README.md](gradivo/README.md).
 
 ## Tehnično gradivo v2.0 (26. 10. 2026)
 
