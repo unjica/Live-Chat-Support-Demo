@@ -1,10 +1,30 @@
 import { create } from "zustand";
 import { Message, User, UserRole } from "@/types";
 import { sendChatMessage } from "@/lib/socket";
+
+export type ConversationMeta = {
+  id: string;
+  createdAt?: number;
+  lastActivityAt?: number;
+  operatorLastReadSequence?: number | null;
+  lastPreview?: string;
+  lastSenderId?: string;
+  lastSequence?: number;
+};
+
+export type PresenceNotice = {
+  id: string;
+  conversationId: string;
+  kind: "left" | "returned";
+  timestamp: number;
+};
+
 interface ChatState {
   messages: Message[];
   user: User | null;
   conversations: Record<string, Message[]>;
+  conversationMeta: Record<string, ConversationMeta>;
+  presenceNotices: Record<string, PresenceNotice[]>;
   onlineVisitors: Set<string>;
   typingUserIds: Set<string>;
   isChatFocused: boolean;
@@ -19,6 +39,9 @@ interface ChatState {
   updateOnlineStatus: (id: string, online: boolean) => void;
   setOnlineVisitors: (ids: string[]) => void;
   setTypingUser: (id: string, typing: boolean) => void;
+  upsertConversationMeta: (meta: ConversationMeta) => void;
+  setOperatorLastRead: (id: string, sequence: number) => void;
+  addPresenceNotice: (conversationId: string, kind: "left" | "returned") => void;
   clearChat: () => void;
 }
 const merge = (list: Message[], m: Message) =>
@@ -29,6 +52,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   user: null,
   conversations: {},
+  conversationMeta: {},
+  presenceNotices: {},
   onlineVisitors: new Set(),
   typingUserIds: new Set(),
   isChatFocused: true,
@@ -41,14 +66,25 @@ export const useChatStore = create<ChatState>((set, get) => ({
     get().setTypingUser(m.senderId, false);
     if (get().user?.role === UserRole.ADMIN)
       get().setTypingUser(m.conversationId, false);
-    if (get().user?.role === UserRole.ADMIN)
+    if (get().user?.role === UserRole.ADMIN) {
       set((s) => ({
         conversations: {
           ...s.conversations,
           [m.conversationId]: merge(s.conversations[m.conversationId] || [], m),
         },
+        conversationMeta: {
+          ...s.conversationMeta,
+          [m.conversationId]: {
+            ...(s.conversationMeta[m.conversationId] || { id: m.conversationId }),
+            id: m.conversationId,
+            lastActivityAt: m.timestamp,
+            lastPreview: m.content,
+            lastSenderId: m.senderId,
+            lastSequence: m.sequence,
+          },
+        },
       }));
-    else set((s) => ({ messages: merge(s.messages, m) }));
+    } else set((s) => ({ messages: merge(s.messages, m) }));
   },
   setSelectedVisitorId: (selectedVisitorId) =>
     set({ selectedVisitorId, typingUserIds: new Set() }),
@@ -68,6 +104,48 @@ export const useChatStore = create<ChatState>((set, get) => ({
       else ids.delete(id);
       return { typingUserIds: ids };
     }),
+  upsertConversationMeta: (meta) =>
+    set((s) => ({
+      conversationMeta: {
+        ...s.conversationMeta,
+        [meta.id]: { ...(s.conversationMeta[meta.id] || {}), ...meta },
+      },
+    })),
+  setOperatorLastRead: (id, sequence) =>
+    set((s) => ({
+      conversationMeta: {
+        ...s.conversationMeta,
+        [id]: {
+          ...(s.conversationMeta[id] || { id }),
+          id,
+          operatorLastReadSequence: sequence,
+        },
+      },
+    })),
+  addPresenceNotice: (conversationId, kind) =>
+    set((s) => {
+      const notice: PresenceNotice = {
+        id: `${conversationId}-${kind}-${Date.now()}`,
+        conversationId,
+        kind,
+        timestamp: Date.now(),
+      };
+      return {
+        presenceNotices: {
+          ...s.presenceNotices,
+          [conversationId]: [
+            ...(s.presenceNotices[conversationId] || []),
+            notice,
+          ].slice(-20),
+        },
+      };
+    }),
   clearChat: () =>
-    set({ messages: [], conversations: {}, typingUserIds: new Set() }),
+    set({
+      messages: [],
+      conversations: {},
+      conversationMeta: {},
+      presenceNotices: {},
+      typingUserIds: new Set(),
+    }),
 }));

@@ -10,6 +10,8 @@
 | O→S | `typing_start` / `typing_stop` | `{conversationId}` | `user_typing` / `user_stopped_typing` drugim v isti sobi in operaterjem |
 | S→O | `receive_message` | `{id, sequence, conversationId, senderId, content, timestamp}` | |
 | S→O | `conversations`, `visitors_online` | seznam pogovorov / id-jev pogovorov s povezanim obiskovalcem | samo soba `operators` |
+| S→O | `visitor_presence` | `{ conversationId, online }` | odhod/vrnitev obiskovalca |
+| S→O | `conversation_read` | `{ conversationId, operatorLastReadSequence }` | po odprtju niti |
 | S→O | `error` | generično besedilo | ob vsaki zavrnitvi (`SocketErrors`) |
 
 Validacija: `class-validator` z `whitelist` in `forbidNonWhitelisted` (dodatna polja so zavrnjena). Velikost paketa je omejena na 16 KiB (`maxHttpBufferSize: 16384`). Prazno sporočilo je zavrnjeno.

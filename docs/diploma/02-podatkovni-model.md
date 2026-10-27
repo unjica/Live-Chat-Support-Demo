@@ -11,6 +11,7 @@ Vir: `backend/prisma/schema.prisma` in edina migracija `backend/prisma/migration
 | `tokenHash` | TEXT | UNIQUE | SHA-256 zgoščena vrednost naključnega 32-bajtnega žetona; surovi žeton se ne shrani. |
 | `status` | TEXT | privzeto `active` | Neaktiven pogovor se ne more prijaviti (`chat.service.ts`). |
 | `createdAt` | TIMESTAMP(3) | privzeto `now()` | Osnova za 30-dnevni iztek žetona. |
+| `operatorLastReadSequence` | INTEGER NULL | — | Zadnja prebrana `Message.sequence` pri operaterju; null = še ni odprto. |
 
 ## Message (sporočilo)
 

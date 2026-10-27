@@ -11,6 +11,7 @@ model Conversation {
   tokenHash String @unique
   status String @default("active")
   createdAt DateTime @default(now())
+  operatorLastReadSequence Int?
   messages Message[]
 }
 model Message {
