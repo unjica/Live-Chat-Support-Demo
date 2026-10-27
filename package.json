@@ -12,7 +12,8 @@
     "typecheck": "npm run typecheck --workspaces",
     "build": "npm run build --workspaces",
     "test": "npm test -w backend",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "diploma:screenshots": "node scripts/diploma-screenshots/capture.mjs"
   },
   "dependencies": {
     "concurrently": "^9.1.2"

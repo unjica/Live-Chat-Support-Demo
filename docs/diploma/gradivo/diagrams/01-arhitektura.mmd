@@ -1,0 +1,22 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#e8f1ff", "primaryBorderColor": "#2563eb", "lineColor": "#334155", "fontFamily": "Inter, Arial, sans-serif"}}}%%
+flowchart TB
+  subgraph Clients["Odjemalci brskalnika"]
+    V["Obiskovalec<br/>/visitor"]
+    A["Operater<br/>/admin"]
+  end
+
+  subgraph Vercel["Vercel — frontend"]
+    FE["Next.js 15 / React 19<br/>Socket.IO odjemalec"]
+  end
+
+  subgraph Railway["Railway — backend-v2"]
+    BE["NestJS 11<br/>ChatGateway + ChatService"]
+    PR["Prisma 6"]
+    PG[("PostgreSQL<br/>Conversation, Message")]
+  end
+
+  V -->|HTTPS| FE
+  A -->|HTTPS| FE
+  FE <-->|"Socket.IO / WebSocket<br/>user_join, send_message, …"| BE
+  BE --> PR
+  PR --> PG

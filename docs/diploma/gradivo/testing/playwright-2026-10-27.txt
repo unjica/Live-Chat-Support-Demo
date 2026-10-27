@@ -1,0 +1,11 @@
+[WebServer]  ⚠ "next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.
+
+Running 3 tests using 1 worker
+
+(node:2016625) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 e2e/chat.spec.ts:22:5 › H3: ordered two-way display and reconnect without page reload (2.2s)
+  ✓  2 e2e/chat.spec.ts:80:5 › expired visitor token recovers with a new conversation (308ms)
+  ✓  3 e2e/chat.spec.ts:93:5 › admin sort, mark-read persists, leave notice, visitor localStorage return (1.5s)
+
+  3 passed (6.3s)
