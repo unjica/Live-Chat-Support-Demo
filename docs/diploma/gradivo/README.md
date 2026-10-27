@@ -34,9 +34,9 @@ Posnetki so iz **izoliranega lokalnega** okolja (27. 10. 2026), z izmišljenimi 
 
 | Datoteka | Opis | Predlagano podpoglavje |
 | --- | --- | --- |
-| `01-arhitektura.mmd` / `.svg` / `.png` | Arhitektura Next.js–NestJS–Socket.IO–PostgreSQL–Vercel/Railway | 4.x arhitektura |
-| `02-er-model.mmd` / `.svg` / `.png` | ER iz `schema.prisma` (vključno z `operatorLastReadSequence`) | 4.x podatkovni model |
-| `03-sekvenca-sporocilo.mmd` / `.svg` / `.png` | Sekvenca: obiskovalec → backend → DB → operater → odgovor | 4.x / 5.x potek |
+| `01-arhitektura.mmd`, `01-arhitektura.svg`, `01-arhitektura.png` | Arhitektura Next.js–NestJS–Socket.IO–PostgreSQL–Vercel/Railway | 4.x arhitektura |
+| `02-er-model.mmd`, `02-er-model.svg`, `02-er-model.png` | ER iz `schema.prisma` (vključno z `operatorLastReadSequence`) | 4.x podatkovni model |
+| `03-sekvenca-sporocilo.mmd`, `03-sekvenca-sporocilo.svg`, `03-sekvenca-sporocilo.png` | Sekvenca: obiskovalec → backend → DB → operater → odgovor | 4.x / 5.x potek |
 
 PNG izvoz: mermaid-cli, belo ozadje, `scale ≥ 3`.
 

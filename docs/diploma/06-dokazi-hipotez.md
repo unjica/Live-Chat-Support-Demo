@@ -19,6 +19,14 @@ Hipoteze so nespremenjene iz potrjene dispozicije (glej `hypotheses.md`).
 
 Interpretacija in omejitve: zakasnitve so merjene na loopbacku in ne vključujejo internetne omrežne zakasnitve, TLS ali brskalniškega izrisa. So spodnja meja strežniške obdelave in shranjevanja v bazo. Najvišja vrednost 35,5 ms v 1. zagonu je enkraten izstop (verjetno ogrevanje). 100 sočasnih obiskovalcev ni obremenitveni test do meje zmogljivosti. Gostovanih meritev (Railway, Vercel) ni bilo.
 
+
+
+## Ločitev vrst dokazov
+
+- **Avtomatizirani** (Jest/Playwright/CI): funkcionalna pravilnost H1–H3 — glej [05-rezultati-testov.md](05-rezultati-testov.md) §5.1–5.2 (27. 10.: 30/30 Jest, 3/3 Playwright).
+- **Lokalni bench** (zgoraj, 26. 10.): loopback zakasnitev in 100 sočasnih obiskovalcev — **ne** produkcija.
+- **Produkcijsko preverjanje** (27. 10.): kvalitativni socket E2E in CORS na backend-v2 + javni frontend — **brez** ms meritev — glej §5.6.
+
 ## H1 — sočasna komunikacija več uporabnikov z ločenimi pogovori
 
 | Dokaz | Vir | Status |
@@ -39,9 +47,9 @@ Interpretacija in omejitve: zakasnitve so merjene na loopbacku in ne vključujej
 | Obe vlogi v brskalniku (obiskovalec, operater) | Playwright `H3: ordered two-way display…` | preverjeno |
 | Docker sklad deluje od začetka do konca | CI `compose-smoke` | preverjeno |
 | Gostovan backend (HTTPS, WSS, PostgreSQL 18) | poglavje 5.3 | preverjeno |
-| Gostovan frontend v2 v brskalniku na javni domeni | predogled zgrajen, ročni test v brskalniku še ni uspešen (poglavje 5.4) | **ni še potrjeno** |
+| Gostovan frontend v2 na javnih domenah (`live-chat.tacko.io`, `live-chat-support-demo.vercel.app`) z backend-v2 | bundle vsebuje URL backend-v2 + UX PR #15; produkcijski socket E2E 27. 10. (poglavje 5.6) | **preverjeno** 27. 10. 2026 |
 
-**Ocena:** H2 je podprta na ravni implementacije in gostovanega backenda. Za popoln dokaz manjkata uspešen brskalniški test gostovanega frontenda v2 in preklop produkcije.
+**Ocena:** H2 je podprta na ravni implementacije, gostovanega backenda in produkcijskega frontenda v2 (27. 10. 2026). **Odprto:** meritve zakasnitve prek interneta (Railway↔Vercel) in GitHub release `v2.0.0`.
 
 ## H3 — komunikacija v realnem času brez ponovnega nalaganja strani
 
@@ -52,4 +60,4 @@ Interpretacija in omejitve: zakasnitve so merjene na loopbacku in ne vključujej
 | Zgodovina preživi ponovni zagon procesa | Jest `H3: history survives…`; gostovano po redeployu in restartu baze | preverjeno |
 | **Zakasnitev dostave:** p50 ≈ 2 ms, p95 < 4 ms v obe smeri (loopback) | meritev 6 | preverjeno lokalno |
 
-**Ocena:** H3 je podprta. **Odprto:** zakasnitev prek interneta (gostovano okolje) in zaslonski posnetki.
+**Ocena:** H3 je podprta (Playwright + Jest + produkcijski socket tok). Zaslonski posnetki so v [gradivo/screenshots/](gradivo/screenshots/) (izolirano lokalno okolje, 27. 10.). **Odprto:** kvantitativna zakasnitev prek interneta (gostovano okolje).

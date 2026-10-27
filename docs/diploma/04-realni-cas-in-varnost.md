@@ -5,7 +5,7 @@
 | Smer | Dogodek | Payload (DTO, `backend/src/dto.ts`) | Odgovor / učinek |
 | --- | --- | --- | --- |
 | O→S | `user_join` | `{role: "visitor"\|"admin", token?, secret?}` (≤256 znakov) | ack `{ok, identity, token?, history, conversations, online}`; obiskovalec vstopi v sobo `conv:<id>`, operater v `operators`. Vsem operaterjem se pošljeta `conversations` in `visitors_online`. |
-| O→S | `select_conversation` | `{conversationId: UUID}` | ack `{ok, history}` (po `sequence`) |
+| O→S | `select_conversation` | `{conversationId: UUID}` | ack `{ok, history}` (po `sequence`); strežnik posodobi `operatorLastReadSequence` in odda `conversation_read` operaterjem |
 | O→S | `send_message` | `{conversationId, clientMessageId: UUID, content: 1–4000}` | shrani; če je novo, odda `receive_message` v `conv:<id>` in `operators`; ack `{ok, message}` |
 | O→S | `typing_start` / `typing_stop` | `{conversationId}` | `user_typing` / `user_stopped_typing` drugim v isti sobi in operaterjem |
 | S→O | `receive_message` | `{id, sequence, conversationId, senderId, content, timestamp}` | |
@@ -52,6 +52,8 @@ sequenceDiagram
   G-->>V: receive_message (soba conv:id)
   G-->>O: receive_message + ack
 ```
+
+Izvožena sekvenca (za Word): [gradivo/diagrams/03-sekvenca-sporocilo.svg](gradivo/diagrams/03-sekvenca-sporocilo.svg) · [PNG](gradivo/diagrams/03-sekvenca-sporocilo.png) · [Mermaid vir](gradivo/diagrams/03-sekvenca-sporocilo.mmd).
 
 ## Varnostni mehanizmi
 

@@ -1,6 +1,6 @@
 # 2. Podatkovni model
 
-Vir: `backend/prisma/schema.prisma` in edina migracija `backend/prisma/migrations/202610230001_init/migration.sql`. Model ima dve tabeli.
+Vir: `backend/prisma/schema.prisma` in migraciji `backend/prisma/migrations/202610230001_init/migration.sql` ter `backend/prisma/migrations/202610270001_operator_last_read/migration.sql`. Model ima dve tabeli.
 
 ## Conversation (pogovor obiskovalca)
 
@@ -11,7 +11,7 @@ Vir: `backend/prisma/schema.prisma` in edina migracija `backend/prisma/migration
 | `tokenHash` | TEXT | UNIQUE | SHA-256 zgoščena vrednost naključnega 32-bajtnega žetona; surovi žeton se ne shrani. |
 | `status` | TEXT | privzeto `active` | Neaktiven pogovor se ne more prijaviti (`chat.service.ts`). |
 | `createdAt` | TIMESTAMP(3) | privzeto `now()` | Osnova za 30-dnevni iztek žetona. |
-| `operatorLastReadSequence` | INTEGER NULL | — | Zadnja prebrana `Message.sequence` pri operaterju; null = še ni odprto. |
+| `operatorLastReadSequence` | INTEGER NULL | dodano migracijo `202610270001_operator_last_read` | Zadnja prebrana `Message.sequence` pri operaterju; `null` = še ni odprto. Ob `select_conversation` strežnik shrani najvišji `sequence` v niti. |
 
 ## Message (sporočilo)
 
@@ -41,6 +41,7 @@ erDiagram
     text tokenHash UK
     text status "default active"
     timestamp createdAt
+    int operatorLastReadSequence "nullable"
   }
   Message {
     text id PK
@@ -52,5 +53,7 @@ erDiagram
     timestamp createdAt
   }
 ```
+
+Izvoženi ER (za Word): [gradivo/diagrams/02-er-model.svg](gradivo/diagrams/02-er-model.svg) · [PNG](gradivo/diagrams/02-er-model.png) · [Mermaid vir](gradivo/diagrams/02-er-model.mmd).
 
 Operaterji nimajo tabele: obstaja ena skupna skrivnost `OPERATOR_SECRET` (glej poglavje 4 in omejitve).

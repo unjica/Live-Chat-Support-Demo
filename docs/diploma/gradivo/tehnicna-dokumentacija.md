@@ -1,6 +1,6 @@
 # Kratka tehnična dokumentacija (preverjeno v kodi)
 
-Namen: dopolnitev poglavij **4** in **5** diplome. Daljši opisi so v [01–08](../README.md); tu so le preverjene točke z datotečnimi potmi (stanje `main` po PR #15, vključno z `localStorage`, `operatorLastReadSequence`, obvestili o prisotnosti).
+Namen: dopolnitev poglavij **4** in **5** diplome. Daljši opisi so v [01–08](../README.md); tu so le preverjene točke z datotečnimi potmi (stanje `main` po PR #15, vključno z `localStorage`, `operatorLastReadSequence`, obvestili o prisotnosti; produkcijski FE+BE v2, 27. 10. 2026).
 
 **Legenda:** **preverjeno** = implementirano v kodi; **načrtovano** = ni v tej izdaji.
 
@@ -16,7 +16,7 @@ Namen: dopolnitev poglavij **4** in **5** diplome. Daljši opisi so v [01–08](
 | Baza | PostgreSQL | migracije v `backend/prisma/migrations/` |
 | Gostovanje | Vercel (FE), Railway backend-v2 (BE + PG) | glej [01-arhitektura.md](../01-arhitektura.md) |
 
-Diagram: [diagrams/01-arhitektura.svg](diagrams/01-arhitektura.svg).
+Diagram: [diagrams/01-arhitektura.svg](diagrams/01-arhitektura.svg) · [PNG](diagrams/01-arhitektura.png) · [Mermaid](diagrams/01-arhitektura.mmd).
 
 ## 2. Podatkovni model — preverjeno
 
@@ -27,7 +27,7 @@ Shema: `backend/prisma/schema.prisma`.
 | `Conversation` | En pogovor na obiskovalca; `visitorId`, `tokenHash` (SHA-256 žetona), `status`, `createdAt`, **`operatorLastReadSequence`** (zadnja prebrana `Message.sequence` pri operaterju; `null` = še ni odprto). |
 | `Message` | Sporočilo z globalnim `sequence` (autoincrement), `conversationId`, `clientMessageId` (idempotentnost), `senderId`, `content`, `createdAt`. Unikat `(conversationId, senderId, clientMessageId)`. |
 
-ER: [diagrams/02-er-model.svg](diagrams/02-er-model.svg). Podrobnosti: [02-podatkovni-model.md](../02-podatkovni-model.md).
+ER: [diagrams/02-er-model.svg](diagrams/02-er-model.svg) · [PNG](diagrams/02-er-model.png) · [Mermaid](diagrams/02-er-model.mmd). Podrobnosti: [02-podatkovni-model.md](../02-podatkovni-model.md).
 
 ## 3. Vzpostavitev povezave Socket.IO — preverjeno
 
@@ -36,7 +36,7 @@ ER: [diagrams/02-er-model.svg](diagrams/02-er-model.svg). Podrobnosti: [02-podat
 3. Strežnik (`ChatGateway.handleUserJoin`) preveri identiteto prek `ChatService`, pridruži sobi in vrne zgodovino / seznam.
 4. Dogodki: `send_message`, `typing_start`/`typing_stop`, `select_conversation`, `visitor_presence`, `conversation_read`, `receive_message` (glej [04-realni-cas-in-varnost.md](../04-realni-cas-in-varnost.md)).
 
-Sekvenca sporočila: [diagrams/03-sekvenca-sporocilo.svg](diagrams/03-sekvenca-sporocilo.svg).
+Sekvenca sporočila: [diagrams/03-sekvenca-sporocilo.svg](diagrams/03-sekvenca-sporocilo.svg) · [PNG](diagrams/03-sekvenca-sporocilo.png) · [Mermaid](diagrams/03-sekvenca-sporocilo.mmd).
 
 ## 4. Identifikacija obiskovalca in ohranjanje pogovora — preverjeno
 

@@ -1,6 +1,6 @@
 # 7. Tehnologije in različice
 
-Različice so razrešene iz korenskega `package-lock.json` (commit `1114039`, monorepo `2.0.0`).
+Različice so razrešene iz korenskega `package-lock.json` (veja `main` po PR #15/#16, monorepo `2.0.0`; preverjeno 27. 10. 2026).
 
 | Področje | Paket / orodje | Različica |
 | --- | --- | --- |
