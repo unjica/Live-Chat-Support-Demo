@@ -118,7 +118,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
         [id]: {
           ...(s.conversationMeta[id] || { id }),
           id,
-          operatorLastReadSequence: sequence,
+          operatorLastReadSequence: Math.max(
+            s.conversationMeta[id]?.operatorLastReadSequence ?? 0,
+            sequence,
+          ),
         },
       },
     })),

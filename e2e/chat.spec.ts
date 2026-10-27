@@ -16,7 +16,7 @@ async function loginOperator(page: Page) {
   await page.getByLabel("Operator secret").fill(process.env.OPERATOR_SECRET!);
   await page.getByRole("button", { name: "Connect", exact: true }).click();
   await expect(page.getByLabel("Operator secret")).toHaveCount(0);
-  await expect(page.locator("h2", { hasText: "Conversations" }).locator("visible=true")).toBeVisible();
+  await expect(page.locator("h2:visible", { hasText: "Conversations" })).toBeVisible();
 }
 
 test("H3: ordered two-way display and reconnect without page reload", async ({ browser }) => {

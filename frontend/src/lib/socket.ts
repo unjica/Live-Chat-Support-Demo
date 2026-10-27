@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { useChatStore, ConversationMeta } from "@/store/chatStore";
 import { Message, UserRole } from "@/types";
 import {
+  VISITOR_TOKEN_KEY,
   clearVisitorToken,
   getVisitorToken,
   setVisitorToken,
@@ -235,6 +236,21 @@ export function connectChat(role: "visitor" | "admin", secret?: string) {
 export function startNewVisitorChat() {
   clearVisitorToken();
   connectChat("visitor");
+}
+/** Other tabs: adopt cleared/updated visitor token so End chat cannot be undone by a stale reconnect. */
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key !== VISITOR_TOKEN_KEY) return;
+    if (!credentials || credentials.role !== "visitor") return;
+    const next = event.newValue;
+    if (!next) {
+      connectChat("visitor");
+      return;
+    }
+    if (next !== credentials.token) {
+      connectChat("visitor");
+    }
+  });
 }
 export function disconnectSocket() {
   generation++;

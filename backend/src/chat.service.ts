@@ -115,11 +115,24 @@ export class ChatService {
       select: { sequence: true },
     });
     const sequence = latest?.sequence ?? 0;
-    await this.db.conversation.update({
-      where: { id: conversationId },
+    await this.db.conversation.updateMany({
+      where: {
+        id: conversationId,
+        OR: [
+          { operatorLastReadSequence: null },
+          { operatorLastReadSequence: { lt: sequence } },
+        ],
+      },
       data: { operatorLastReadSequence: sequence },
     });
-    return { conversationId, operatorLastReadSequence: sequence };
+    const row = await this.db.conversation.findUniqueOrThrow({
+      where: { id: conversationId },
+      select: { operatorLastReadSequence: true },
+    });
+    return {
+      conversationId,
+      operatorLastReadSequence: row.operatorLastReadSequence ?? sequence,
+    };
   }
   async save(user: Identity, dto: MessageDto) {
     await this.authorize(user, dto.conversationId);

@@ -8,6 +8,7 @@ erDiagram
     string visitorId UK
     string tokenHash UK
     string status
+    int operatorLastReadSequence
     datetime createdAt
   }
   Message {
