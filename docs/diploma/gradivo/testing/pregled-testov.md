@@ -2,6 +2,15 @@
 
 Hipoteze **H1–H3** niso spremenjene. Podrobna razlaga: [06-dokazi-hipotez.md](../../06-dokazi-hipotez.md). Surovi rezultati: [../../rezultati/](../../rezultati/).
 
+## 0. Ločitev kategorij
+
+| Oznaka | Pomen | Ta dokument |
+| --- | --- | --- |
+| **A** | Avtomatizirani (Jest, Playwright, CI) | §1, [izvedba-lokalno.md](izvedba-lokalno.md) |
+| **B** | Lokalni bench (loopback) | §3–§4; datoteke v `docs/diploma/rezultati/` |
+| **C** | Produkcijsko preverjanje | §5 |
+
+
 ## 1. Pregled funkcionalnih testov
 
 | Sklop | Orodje | Lokacija | Zadnji preverjeni zagon |
@@ -19,7 +28,7 @@ Hipoteze **H1–H3** niso spremenjene. Podrobna razlaga: [06-dokazi-hipotez.md](
 | Hipoteza | Kratek dokaz | Status |
 | --- | --- | --- |
 | **H1** — sočasni ločeni pogovori | Jest izolacija; bench 100 obiskovalcev, 0 tujih sporočil (3 zagoni 26. 10.) | podprta |
-| **H2** — sklad Next/Nest/Socket.IO | build + Jest H2 + Playwright + gostovan backend-v2 | podprta (FE produkcijski promote je korak upravljavca) |
+| **H2** — sklad Next/Nest/Socket.IO | build + Jest H2 + Playwright + gostovan backend-v2 + produkcijski FE v2 (27. 10.) | podprta |
 | **H3** — realni čas brez reload | Playwright H3 (`load` = 0); Jest vrstni red / reconnect; loopback p50 ≈ 2 ms | podprta |
 
 ## 3. Preglednica obremenitvenih meritev (26. 10. 2026)
@@ -41,10 +50,13 @@ Skript `scripts/bench/latency-and-concurrency.cjs` meri na istem gostitelju (`pe
 
 Za bench se uporabi `CLIENT_IP_HEADER=x-real-ip` z različnimi IP, da rate limit 60 handshakeov/IP/min ne zavrne simulacije.
 
-## 5. Produkcijsko preverjanje 27. 10. 2026 (dejstvo)
+## 5. Produkcijsko preverjanje 27. 10. 2026 (dejstvo) — ločeno od A/B
 
-- **backend-v2** deploy **`9cfd4f28`** na commit `2559e9e` (vključno z migracijo `202610270001_operator_last_read`).
-- Socket E2E proti produkcijskemu backend-v2: **ALL_CHECKS_PASSED** (CORS za dovoljene izvore OK; zavrnitev tujega izvora).
+To **ni** avtomatizirani CI test in **ni** lokalni bench.
+
+- **backend-v2** deploy **`9cfd4f28`** (migracija `202610270001_operator_last_read`).
+- Socket E2E proti produkcijskemu backend-v2: **ALL_CHECKS_PASSED** — CORS (dovoljeni izvori OK, tuji izvor zavrnjen), razvrščanje, prebrano stanje, prisotnost, pošiljanje offline, vrnitev obiskovalca, odgovor operaterja.
+- Javni frontend v2: `live-chat.tacko.io` in `live-chat-support-demo.vercel.app` v bundleu kažeta na backend-v2; UX PR #15 je v produkcijskem bundleu (preverjeno z javnim pregledom chunkov).
 - Ta paket gradiva **ni** spreminjal produkcije; posnetki so iz **izoliranega** lokalnega okolja.
 
 ## 6. Omejitve testiranja (jasno označeno)
