@@ -125,14 +125,20 @@ export class ChatGateway implements OnGatewayDisconnect {
             this.chat.format(m),
           )
         : [];
+      const online = this.online();
       this.server.to("operators").emit("conversations", await this.chat.list());
-      this.server.to("operators").emit("visitors_online", this.online());
+      this.server.to("operators").emit("visitors_online", online);
+      if (result.identity.role === "visitor" && result.identity.conversationId)
+        this.server.to("operators").emit("visitor_presence", {
+          conversationId: result.identity.conversationId,
+          online: true,
+        });
       return {
         ok: true,
         ...result,
         conversations,
         history,
-        online: result.identity.role === "admin" ? this.online() : [],
+        online: result.identity.role === "admin" ? online : [],
       };
     } catch (error: unknown) {
       clearTimeout(s.data.expiryTimer);
@@ -149,12 +155,20 @@ export class ChatGateway implements OnGatewayDisconnect {
   @SubscribeMessage("select_conversation")
   async select(@ConnectedSocket() s: Socket, @MessageBody() raw: unknown) {
     const dto = await this.dto(ConversationDto, raw);
-    await this.chat.authorize(this.user(s), dto.conversationId);
+    const user = this.user(s);
+    await this.chat.authorize(user, dto.conversationId);
+    let operatorLastReadSequence: number | undefined;
+    if (user?.role === "admin") {
+      const marked = await this.chat.markRead(user, dto.conversationId);
+      operatorLastReadSequence = marked.operatorLastReadSequence;
+      this.server.to("operators").emit("conversation_read", marked);
+    }
     return {
       ok: true,
       history: (await this.chat.history(dto.conversationId)).map((m) =>
         this.chat.format(m),
       ),
+      operatorLastReadSequence,
     };
   }
   @SubscribeMessage("send_message")
@@ -224,6 +238,12 @@ export class ChatGateway implements OnGatewayDisconnect {
           id: user.id,
           conversationId: user.conversationId,
         });
-    this.server.to("operators").emit("visitors_online", this.online());
+    const online = this.online();
+    this.server.to("operators").emit("visitors_online", online);
+    if (user?.role === "visitor" && user.conversationId && !online.includes(user.conversationId))
+      this.server.to("operators").emit("visitor_presence", {
+        conversationId: user.conversationId,
+        online: false,
+      });
   }
 }

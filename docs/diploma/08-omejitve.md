@@ -22,10 +22,18 @@
 
 - **Ena replika:** prisotnost, sobe in števci omejitev so v pomnilniku. Ni Redis adapterja ali porazdeljenih omejitev.
 - **Ena skupna skrivnost operaterja:** ni individualnih računov, vlog ali MFA. Ni revizijske sledi po operaterju (`senderId` = `operator`).
-- **Žeton obiskovalca** je bearer poverilnica v `sessionStorage`, dostopna skriptam istega izvora. Velja 30 dni, ni ročnega preklica.
+- **Žeton obiskovalca** je bearer poverilnica v `localStorage` (prej `sessionStorage`), dostopna skriptam istega izvora. Velja 30 dni. Na deljenih računalnikih uporabi **End chat**. Operater lahko piše tudi offline; obiskovalec vidi sporočila ob vrnitvi.
 - **Brez paginacije in retencije:** seznam pogovorov in zgodovina se naložita v celoti.
 - Omejitve na socket se z novo povezavo obidejo. Omejitev handshakeov velja na IP.
 - **Brez trajne čakalne vrste brez povezave** (offline queue). Neposlano besedilo ostane samo v polju.
 - **Odvisnosti:** audit 23. 10. 2026 je navedel 39 ugotovitev (37 high, 2 moderate), glej `security-audit.md`.
 - **Zunanji avatarji** lahko tretji strani razkrijejo obisk.
 - Vmesnik je samo v angleščini.
+
+
+## Spremembe UX (27. 10. 2026)
+
+- Seznam pogovorov: najnovejša aktivnost zgoraj (zadnja sporočila / `createdAt`).
+- Ob odprtju pogovora se shrani `operatorLastReadSequence` v bazi; značka neprebranega preživi osvežitev.
+- Obvestilo v niti ob odhodu/vrnitvi obiskovalca; namig pri tipkalniku, ko je offline.
+- Žeton v `localStorage`; gumb End chat za novo sejo.

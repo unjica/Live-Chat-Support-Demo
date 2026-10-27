@@ -3,6 +3,7 @@ import { useChatStore } from "@/store/chatStore";
 import { MessageBubble } from "@/components/shared/MessageBubble";
 import { MessageInput } from "@/components/shared/MessageInput";
 import { chatConfig } from "@/config/chat";
+import { startNewVisitorChat } from "@/lib/socket";
 
 interface ChatWindowProps {
   conversationId: string;
@@ -53,6 +54,19 @@ export function ChatWindow({ conversationId, onClose }: ChatWindowProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm("End this chat and start a new conversation?")) {
+                startNewVisitorChat();
+                onClose();
+              }
+            }}
+            className="px-2 py-1 text-xs rounded-md border border-white/40 text-white hover:bg-[#ffffff1a]"
+            aria-label="End chat"
+          >
+            End chat
+          </button>
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-[#ffffff1a] text-white"

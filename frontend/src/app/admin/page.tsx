@@ -20,6 +20,8 @@ export default function AdminPage() {
   const {
     user,
     conversations,
+    conversationMeta,
+    presenceNotices,
     isChatFocused,
     setIsChatFocused,
     onlineVisitors,
@@ -30,21 +32,67 @@ export default function AdminPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Get unique visitor IDs from conversations
   const visitors = useMemo(() => {
-    return Array.from(new Set(Object.keys(conversations)));
-  }, [conversations]);
+    const ids = Array.from(
+      new Set([
+        ...Object.keys(conversations),
+        ...Object.keys(conversationMeta),
+      ]),
+    );
+    return ids.sort((a, b) => {
+      const aMsgs = conversations[a] || [];
+      const bMsgs = conversations[b] || [];
+      const aLast = aMsgs.length
+        ? aMsgs[aMsgs.length - 1].timestamp
+        : conversationMeta[a]?.lastActivityAt ||
+          conversationMeta[a]?.createdAt ||
+          0;
+      const bLast = bMsgs.length
+        ? bMsgs[bMsgs.length - 1].timestamp
+        : conversationMeta[b]?.lastActivityAt ||
+          conversationMeta[b]?.createdAt ||
+          0;
+      return bLast - aLast;
+    });
+  }, [conversations, conversationMeta]);
 
-  // Get messages for selected visitor
   const selectedConversation = useMemo(() => {
     return selectedVisitor ? conversations[selectedVisitor] || [] : [];
   }, [selectedVisitor, conversations]);
 
+  const selectedNotices = useMemo(() => {
+    return selectedVisitor ? presenceNotices[selectedVisitor] || [] : [];
+  }, [selectedVisitor, presenceNotices]);
+
+  const threadItems = useMemo(() => {
+    if (!selectedVisitor) return [];
+    type Item =
+      | { kind: "message"; key: string; timestamp: number; message: (typeof selectedConversation)[0] }
+      | { kind: "notice"; key: string; timestamp: number; notice: (typeof selectedNotices)[0] };
+    const items: Item[] = [
+      ...selectedConversation.map((message) => ({
+        kind: "message" as const,
+        key: message.id,
+        timestamp: message.timestamp,
+        message,
+      })),
+      ...selectedNotices.map((notice) => ({
+        kind: "notice" as const,
+        key: notice.id,
+        timestamp: notice.timestamp,
+        notice,
+      })),
+    ];
+    return items.sort((a, b) => a.timestamp - b.timestamp);
+  }, [selectedVisitor, selectedConversation, selectedNotices]);
+
   const selectedVisitorIsTyping = Boolean(
     selectedVisitor && typingUserIds.has(selectedVisitor),
   );
+  const visitorOnline = Boolean(
+    selectedVisitor && onlineVisitors.has(selectedVisitor),
+  );
 
-  // Get all messages for notifications
   const allMessages = useMemo(() => {
     return Object.values(conversations).flat();
   }, [conversations]);
@@ -76,17 +124,16 @@ export default function AdminPage() {
     }
   }, [selectedVisitor, resetUnreadCount]);
 
-  // Auto-scroll to bottom when messages or typing-at-bottom changes
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [selectedConversation, selectedVisitorIsTyping]);
+  }, [threadItems, selectedVisitorIsTyping]);
 
   const handleSelectVisitor = async (visitorId: string) => {
     setSelectedVisitor(visitorId);
     setLoadingHistory(true);
     await selectConversation(visitorId);
     setLoadingHistory(false);
-    setIsSidebarOpen(false); // Close sidebar on mobile after selection
+    setIsSidebarOpen(false);
   };
 
   if (!user || user.role !== UserRole.ADMIN)
@@ -116,7 +163,6 @@ export default function AdminPage() {
     );
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
-      {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white dark:bg-gray-800 p-4 border-b border-gray-200/80 dark:border-gray-700/80">
         <div className="flex items-center justify-between">
           <button
@@ -144,7 +190,6 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Sidebar with conversation list */}
       <div
         className={`fixed md:static inset-y-0 left-0 z-20 w-full md:w-1/3 lg:w-1/4 bg-white dark:bg-gray-800 transform transition-transform duration-300 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -165,15 +210,36 @@ export default function AdminPage() {
               conversation.length > 0
                 ? conversation[conversation.length - 1]
                 : null;
+            const readSeq =
+              conversationMeta[visitorId]?.operatorLastReadSequence ?? null;
+            const unreadFromLoaded = conversation.some(
+              (m) =>
+                m.senderId !== "operator" &&
+                m.senderId !== user?.id &&
+                (readSeq == null || (m.sequence || 0) > readSeq),
+            );
+            const meta = conversationMeta[visitorId];
+            const unreadFromMeta =
+              !conversation.length &&
+              meta?.lastSenderId &&
+              meta.lastSenderId !== "operator" &&
+              meta.lastSenderId !== user?.id &&
+              (readSeq == null ||
+                (meta.lastSequence != null && meta.lastSequence > readSeq));
             const hasUnread =
               selectedVisitor !== visitorId &&
-              lastMessage &&
-              lastMessage.senderId !== user?.id;
+              (unreadFromLoaded || Boolean(unreadFromMeta));
             const isOnline = onlineVisitors.has(visitorId);
+            const preview =
+              lastMessage?.content ||
+              conversationMeta[visitorId]?.lastPreview ||
+              "";
 
             return (
               <div
                 key={visitorId}
+                data-testid="conversation-row"
+                data-conversation-id={visitorId}
                 className={`p-4 cursor-pointer transition-colors ${
                   selectedVisitor === visitorId
                     ? "bg-blue-50 dark:bg-blue-900/30"
@@ -209,15 +275,18 @@ export default function AdminPage() {
                           {isOnline ? "online" : "offline"}
                         </span>
                       </div>
-                      {lastMessage && (
+                      {preview && (
                         <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                          {lastMessage.content}
+                          {preview}
                         </p>
                       )}
                     </div>
                   </div>
                   {hasUnread && (
-                    <span className="flex h-6 items-center">
+                    <span
+                      data-testid="unread-badge"
+                      className="flex h-6 items-center"
+                    >
                       <span className="relative flex h-3 w-3">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
@@ -231,38 +300,46 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Main chat area */}
       <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900 mt-16 md:mt-0">
         {selectedVisitor ? (
           <>
             <div className="border-b border-gray-200 dark:border-gray-700">
               <ChatHeader
                 title={`Chat with Visitor ${selectedVisitor.substring(0, 8)}`}
-                status={
-                  onlineVisitors.has(selectedVisitor)
-                    ? Status.ONLINE
-                    : Status.OFFLINE
-                }
+                status={visitorOnline ? Status.ONLINE : Status.OFFLINE}
               />
             </div>
             <div className="flex-1 overflow-y-auto p-4 bg-[#efeae2] dark:bg-gray-900">
               {loadingHistory && <p role="status">Loading history…</p>}
-              {selectedConversation.map((message) => (
-                <MessageBubble
-                  key={message.id}
-                  message={message}
-                  isOwnMessage={message.senderId === user?.id}
-                  sender={
-                    message.senderId !== user?.id
-                      ? {
-                          id: message.senderId,
-                          name: `Visitor ${message.senderId.substring(0, 8)}`,
-                          role: UserRole.VISITOR,
-                        }
-                      : undefined
-                  }
-                />
-              ))}
+              {threadItems.map((item) =>
+                item.kind === "message" ? (
+                  <MessageBubble
+                    key={item.key}
+                    message={item.message}
+                    isOwnMessage={item.message.senderId === user?.id}
+                    sender={
+                      item.message.senderId !== user?.id
+                        ? {
+                            id: item.message.senderId,
+                            name: `Visitor ${item.message.senderId.substring(0, 8)}`,
+                            role: UserRole.VISITOR,
+                          }
+                        : undefined
+                    }
+                  />
+                ) : (
+                  <p
+                    key={item.key}
+                    data-testid="presence-notice"
+                    className="text-center text-xs text-gray-600 dark:text-gray-400 my-3"
+                    role="status"
+                  >
+                    {item.notice.kind === "left"
+                      ? "Visitor left the chat. They will see new messages when they return."
+                      : "Visitor returned to the chat."}
+                  </p>
+                ),
+              )}
               {selectedVisitor && typingUserIds.has(selectedVisitor) && (
                 <p
                   className="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-2 italic"
@@ -274,6 +351,15 @@ export default function AdminPage() {
               <div ref={messagesEndRef} />
             </div>
             <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+              {!visitorOnline && (
+                <p
+                  data-testid="offline-composer-hint"
+                  className="text-xs text-amber-700 dark:text-amber-300 mb-2"
+                >
+                  Visitor is offline. You can still send; they will see the
+                  message when they return.
+                </p>
+              )}
               <MessageInput
                 key={selectedVisitor}
                 conversationId={selectedVisitor}
