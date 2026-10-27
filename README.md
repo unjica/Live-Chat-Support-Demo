@@ -54,7 +54,7 @@ npm run db:migrate -w backend
 npm run dev
 ```
 
-Open http://localhost:3000/visitor and http://localhost:3000/admin. Enter the backend operator secret in the operator login form. Use separate browser profiles for independent visitors; duplicated tabs can inherit sessionStorage. `npm run dev` starts both workspaces. If a restricted environment reports Watchpack `EMFILE`, use `WATCHPACK_POLLING=true npm run dev`. The explicit `compose.dev.yaml` file starts only PostgreSQL, bound to loopback with a persistent volume; its example credentials are for local development.
+Open http://localhost:3000/visitor and http://localhost:3000/admin. Enter the backend operator secret in the operator login form. Use separate browser profiles for independent visitors; duplicated tabs share localStorage and the same conversation. `npm run dev` starts both workspaces. If a restricted environment reports Watchpack `EMFILE`, use `WATCHPACK_POLLING=true npm run dev`. The explicit `compose.dev.yaml` file starts only PostgreSQL, bound to loopback with a persistent volume; its example credentials are for local development.
 
 ## Configuration
 
@@ -74,7 +74,7 @@ Backend workspace scripts load `backend/.env`. Frontend loads `frontend/.env.loc
 | `BIND_ADDRESS` | Compose published app interface, default 127.0.0.1. |
 | `FRONTEND_PORT` / `BACKEND_PORT` | Compose published app ports, default 3000 / 3001; also update browser URLs when changing. |
 
-Visitor bearer tokens live in sessionStorage and expire 30 days after conversation creation. Expired tokens start a new conversation; old history stays in the database and is not automatically deleted. Use HTTPS/WSS outside localhost. Never commit `.env` files or log credentials.
+Visitor bearer tokens live in localStorage (migrated from older sessionStorage builds) and expire 30 days after conversation creation. Shared computers: use End chat to clear the token. Closing a tab no longer starts a new conversation on return. Expired tokens start a new conversation; old history stays in the database and is not automatically deleted. Use HTTPS/WSS outside localhost. Never commit `.env` files or log credentials.
 
 The UI includes typing indicators, connection status, unread notifications and dark mode. Customize the greeting and agent name in `frontend/src/config/chat.ts`; styles use Tailwind CSS.
 

@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-26T10:41:25.010Z",
+  "node": "v22.23.4",
+  "api": "http://127.0.0.1:43201",
+  "latency_ms": {
+    "visitor_ack": {
+      "n": 100,
+      "min": 1.45,
+      "p50": 2,
+      "p95": 2.86,
+      "p99": 4.23,
+      "max": 4.23,
+      "mean": 2.06
+    },
+    "visitor_to_operator": {
+      "n": 100,
+      "min": 1.4,
+      "p50": 2.02,
+      "p95": 2.9,
+      "p99": 4.35,
+      "max": 4.35,
+      "mean": 2.06
+    },
+    "operator_to_visitor": {
+      "n": 100,
+      "min": 1.29,
+      "p50": 1.92,
+      "p95": 2.9,
+      "p99": 3.52,
+      "max": 3.52,
+      "mean": 2.02
+    }
+  },
+  "concurrency": {
+    "visitors": 100,
+    "messages_per_visitor": 5,
+    "connect_and_join_ms": 181.6,
+    "send_acks_ok": 500,
+    "sends_total": 500,
+    "replies_ok": 100,
+    "operator_received": 600,
+    "expected_operator_received": 600,
+    "visitors_with_foreign_messages": 0,
+    "visitors_receiving_all_own": 100,
+    "history_ordered_by_sequence": true,
+    "burst_total_ms": 1683.8
+  }
+}

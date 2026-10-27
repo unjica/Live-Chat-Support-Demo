@@ -13,6 +13,7 @@ type Reply = {
   identity: { id: string; conversationId: string };
   history: { content: string; sequence: number }[];
   message: { id: string; senderId: string; sequence: number };
+  operatorLastReadSequence?: number;
 };
 const secret = "integration-only-secret-32-characters-long";
 let app: INestApplication, url: string, db: PrismaService;
@@ -383,4 +384,49 @@ test("H3: history survives a full Nest process lifecycle and replies still work"
     ).ok,
   ).toBe(true);
   expect((await received).content).toBe("reply after restart");
+});
+
+test("conversations list newest activity first; mark-read persists on select", async () => {
+  const older = await visitor();
+  await ack(older.s, "send_message", {
+    conversationId: older.r.identity.conversationId,
+    clientMessageId: randomUUID(),
+    content: "older-msg",
+  });
+  await delay();
+  const newer = await visitor();
+  await ack(newer.s, "send_message", {
+    conversationId: newer.r.identity.conversationId,
+    clientMessageId: randomUUID(),
+    content: "newer-msg",
+  });
+  const op = await connect();
+  const join = await ack(op, "user_join", { role: "admin", secret });
+  expect(join.ok).toBe(true);
+  const list = await app.get(ChatService).list();
+  const ids = list.map((c) => c.id);
+  expect(ids.indexOf(newer.r.identity.conversationId)).toBeLessThan(
+    ids.indexOf(older.r.identity.conversationId),
+  );
+  expect(list.find((c) => c.id === older.r.identity.conversationId)?.operatorLastReadSequence).toBeNull();
+  const selected = await ack(op, "select_conversation", {
+    conversationId: older.r.identity.conversationId,
+  });
+  expect(selected.ok).toBe(true);
+  expect(typeof selected.operatorLastReadSequence).toBe("number");
+  const again = await app.get(ChatService).list();
+  const olderMeta = again.find((c) => c.id === older.r.identity.conversationId);
+  expect(olderMeta?.operatorLastReadSequence).toBe(selected.operatorLastReadSequence);
+});
+
+test("visitor_presence left when the last visitor socket disconnects", async () => {
+  const v = await visitor();
+  const op = await connect();
+  expect((await ack(op, "user_join", { role: "admin", secret })).ok).toBe(true);
+  const events: { conversationId: string; online: boolean }[] = [];
+  op.on("visitor_presence", (p) => events.push(p));
+  v.s.disconnect();
+  await delay();
+  await delay();
+  expect(events.some((e) => e.conversationId === v.r.identity.conversationId && e.online === false)).toBe(true);
 });

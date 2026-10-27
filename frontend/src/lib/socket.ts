@@ -1,7 +1,13 @@
 import { io, Socket } from "socket.io-client";
 import { create } from "zustand";
-import { useChatStore } from "@/store/chatStore";
+import { useChatStore, ConversationMeta } from "@/store/chatStore";
 import { Message, UserRole } from "@/types";
+import {
+  VISITOR_TOKEN_KEY,
+  clearVisitorToken,
+  getVisitorToken,
+  setVisitorToken,
+} from "@/lib/visitorStorage";
 export const useErrorStore = create<{
   error: string | null;
   setError: (error: string | null) => void;
@@ -18,6 +24,18 @@ let credentials: {
   token?: string;
   secret?: string;
 } | null = null;
+type ConversationListItem = {
+  id: string;
+  createdAt?: string | number | Date;
+  lastActivityAt?: string | number | Date;
+  operatorLastReadSequence?: number | null;
+  lastMessage?: {
+    content?: string;
+    senderId?: string;
+    sequence?: number;
+    createdAt?: string | number | Date;
+  } | null;
+};
 type Reply = {
   ok: boolean;
   error?: string;
@@ -25,10 +43,39 @@ type Reply = {
   identity?: { id: string; role: "visitor" | "admin"; conversationId?: string };
   token?: string;
   history?: Message[];
-  conversations?: { id: string }[];
+  conversations?: ConversationListItem[];
   online?: string[];
   message?: Message;
+  operatorLastReadSequence?: number;
 };
+function toMs(v: string | number | Date | undefined): number | undefined {
+  if (v == null) return undefined;
+  if (typeof v === "number") return v;
+  if (v instanceof Date) return v.getTime();
+  const n = Date.parse(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+function applyConversationList(list: ConversationListItem[]) {
+  const state = useChatStore.getState();
+  for (const c of list) {
+    const meta: ConversationMeta = {
+      id: c.id,
+      createdAt: toMs(c.createdAt),
+      lastActivityAt: toMs(c.lastActivityAt) ?? toMs(c.createdAt),
+      operatorLastReadSequence: c.operatorLastReadSequence,
+      lastPreview: c.lastMessage?.content,
+      lastSenderId: c.lastMessage?.senderId,
+      lastSequence: c.lastMessage?.sequence,
+    };
+    state.upsertConversationMeta(meta);
+  }
+  useChatStore.setState((s) => ({
+    conversations: {
+      ...Object.fromEntries(list.map((c) => [c.id, s.conversations[c.id] || []])),
+      ...s.conversations,
+    },
+  }));
+}
 async function request(event: string, payload: unknown): Promise<Reply> {
   try {
     return await getSocket().timeout(10000).emitWithAck(event, payload);
@@ -51,7 +98,7 @@ async function join() {
     credentials?.role === "visitor" &&
     credentials.token
   ) {
-    sessionStorage.removeItem("chat-token");
+    clearVisitorToken();
     credentials = { role: "visitor" };
     pending = null;
     useChatStore.getState().clearChat();
@@ -69,7 +116,7 @@ async function join() {
     return;
   }
   if (reply.token) {
-    sessionStorage.setItem("chat-token", reply.token);
+    setVisitorToken(reply.token);
     credentials.token = reply.token;
   }
   const state = useChatStore.getState();
@@ -78,13 +125,7 @@ async function join() {
     name: reply.identity.role === "admin" ? "Operator" : "Visitor",
     role: reply.identity.role === "admin" ? UserRole.ADMIN : UserRole.VISITOR,
   });
-  // Merge by server id to retain events received while history was being fetched.
-  useChatStore.setState((s) => ({
-    conversations: {
-      ...Object.fromEntries((reply.conversations || []).map((c) => [c.id, []])),
-      ...s.conversations,
-    },
-  }));
+  if (reply.conversations) applyConversationList(reply.conversations);
   reply.history?.forEach(state.receiveMessage);
   state.setOnlineVisitors(reply.online || []);
   useConnectionStore.setState({
@@ -125,19 +166,38 @@ export function initializeSocket() {
   socket.on("error", (error: string) =>
     useErrorStore.getState().setError(error),
   );
-  socket.on("receive_message", (m: Message) =>
-    useChatStore.getState().receiveMessage(m),
+  socket.on("receive_message", (m: Message) => {
+    const s = useChatStore.getState();
+    s.receiveMessage(m);
+    if (
+      s.role === UserRole.ADMIN &&
+      s.selectedVisitorId === m.conversationId
+    )
+      void persistRead(m.conversationId);
+  });
+  socket.on("conversations", (list: ConversationListItem[]) =>
+    applyConversationList(list),
   );
-  socket.on("conversations", (list: { id: string }[]) =>
-    useChatStore.setState((s) => ({
-      conversations: {
-        ...Object.fromEntries(list.map((c) => [c.id, []])),
-        ...s.conversations,
-      },
-    })),
-  );
+  socket.on("conversation_read", (p: { conversationId: string; operatorLastReadSequence: number }) => {
+    useChatStore.getState().setOperatorLastRead(p.conversationId, p.operatorLastReadSequence);
+  });
   socket.on("visitors_online", (ids: string[]) =>
     useChatStore.getState().setOnlineVisitors(ids),
+  );
+  socket.on(
+    "visitor_presence",
+    (p: { conversationId: string; online: boolean }) => {
+      const s = useChatStore.getState();
+      s.updateOnlineStatus(p.conversationId, p.online);
+      const notices = s.presenceNotices[p.conversationId] || [];
+      const last = notices[notices.length - 1];
+      // visitors_online may arrive first and clear the set; trust this event.
+      if (!p.online) {
+        if (last?.kind !== "left") s.addPresenceNotice(p.conversationId, "left");
+      } else if (last?.kind === "left") {
+        s.addPresenceNotice(p.conversationId, "returned");
+      }
+    },
   );
   for (const [event, typing] of [
     ["user_typing", true],
@@ -163,7 +223,7 @@ export function connectChat(role: "visitor" | "admin", secret?: string) {
   useChatStore.setState({ user: null, selectedVisitorId: null });
   credentials =
     role === "visitor"
-      ? { role, token: sessionStorage.getItem("chat-token") || undefined }
+      ? { role, token: getVisitorToken() || undefined }
       : { role, secret };
   useConnectionStore.setState({
     status: "Connecting…",
@@ -171,6 +231,26 @@ export function connectChat(role: "visitor" | "admin", secret?: string) {
     conversationId: null,
   });
   s.connect();
+}
+/** Clear the visitor token and start a brand-new conversation (same tab). */
+export function startNewVisitorChat() {
+  clearVisitorToken();
+  connectChat("visitor");
+}
+/** Other tabs: adopt cleared/updated visitor token so End chat cannot be undone by a stale reconnect. */
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key !== VISITOR_TOKEN_KEY) return;
+    if (!credentials || credentials.role !== "visitor") return;
+    const next = event.newValue;
+    if (!next) {
+      connectChat("visitor");
+      return;
+    }
+    if (next !== credentials.token) {
+      connectChat("visitor");
+    }
+  });
 }
 export function disconnectSocket() {
   generation++;
@@ -185,13 +265,27 @@ export function disconnectSocket() {
   useChatStore.getState().clearChat();
   useChatStore.setState({ user: null });
 }
+async function persistRead(id: string) {
+  const currentGeneration = generation;
+  const reply = await request("select_conversation", { conversationId: id });
+  if (currentGeneration !== generation || !reply.ok) return;
+  if (typeof reply.operatorLastReadSequence === "number")
+    useChatStore
+      .getState()
+      .setOperatorLastRead(id, reply.operatorLastReadSequence);
+}
 export async function selectConversation(id: string) {
   const currentGeneration = generation;
   useChatStore.getState().setSelectedVisitorId(id);
   const reply = await request("select_conversation", { conversationId: id });
   if (currentGeneration !== generation) return;
-  if (reply.ok) reply.history?.forEach(useChatStore.getState().receiveMessage);
-  else
+  if (reply.ok) {
+    reply.history?.forEach(useChatStore.getState().receiveMessage);
+    if (typeof reply.operatorLastReadSequence === "number")
+      useChatStore
+        .getState()
+        .setOperatorLastRead(id, reply.operatorLastReadSequence);
+  } else
     useErrorStore.getState().setError(reply.error || "Could not load history");
 }
 // Keep the same client id for an unacknowledged retry, including after reconnect.
